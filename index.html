@@ -1,208 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LIVE CHECKER - WORKING</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-body { background: 
-; color: 
-; display: flex; height: 100vh; overflow: hidden; }
-.left-panel { width: 280px; background: 
-; padding: 15px; display: flex; flex-direction: column; border-right: 1px solid #333; }
-.middle-panel { flex: 1; background: 
-; padding: 15px; display: flex; flex-direction: column; }
-.panel-header { background: 
-; padding: 8px 12px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; color: #aaa; }
-.account-list { flex: 1; background: 
-; border: 1px solid #333; border-radius: 5px; padding: 10px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 11px; color: 
-; margin-bottom: 10px; }
-.btn-group { display: flex; gap: 10px; }
-.btn { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; }
-.btn-clear { background: 
-; color: 
-; }
-.btn-clear:hover { background: 
-; }
-.btn-check { background: 
-; color: 
-; }
-.btn-check:hover { background: 
-; }
-.status-bar { background: 
-; padding: 8px 12px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; color: #aaa; display: flex; justify-content: space-between; }
-.result-container { flex: 1; background: 
-; border: 1px solid #333; border-radius: 5px; padding: 10px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px; }
-.result-item { padding: 4px 8px; margin-bottom: 3px; border-radius: 3px; display: flex; justify-content: space-between; animation: slideIn 0.2s; }
-@keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-.result-active { background: rgba(0, 255, 0, 0.05); color: 
-; }
-.result-blocked { background: rgba(255, 0, 0, 0.05); color: 
-; }
-.progress-footer { background: 
-; padding: 10px 15px; border-radius: 5px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
-.progress-bar { flex: 1; height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin: 0 15px; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, 
-, 
-); width: 0%; transition: width 0.3s; }
-.progress-text { font-size: 13px; font-weight: bold; color: 
-; }
-.info { background: 
-; border: 1px solid 
-; padding: 8px; border-radius: 5px; margin-bottom: 10px; font-size: 11px; color: 
-; }
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: 
-; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Longisir VIP - Pro Checker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: #05060f; color: #fff; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
+        .container { width: 100%; max-width: 850px; }
+        .hidden { display: none !important; }
+
+        /* --- হোম পেজ: জল জল (Neon Glow) এনিমেশন --- */
+        .home-grid { display: flex; gap: 20px; justify-content: center; margin-top: 80px; flex-wrap: wrap; }
+        .h-card { 
+            background: #0f111a; border: 2px solid #1e293b; padding: 35px; border-radius: 25px; 
+            text-align: center; width: 240px; cursor: pointer; transition: 0.4s;
+            animation: neonPulse 2.5s infinite ease-in-out;
+        }
+        @keyframes neonPulse {
+            0% { border-color: #1e293b; box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); }
+            50% { border-color: #4f46e5; box-shadow: 0 0 25px rgba(79, 70, 229, 0.7), inset 0 0 10px rgba(79, 70, 229, 0.3); }
+            100% { border-color: #1e293b; box-shadow: 0 0 5px rgba(79, 70, 229, 0.2); }
+        }
+        .h-card:hover { transform: scale(1.05); background: #161a29; }
+        .h-card span { font-size: 45px; display: block; margin-bottom: 10px; filter: drop-shadow(0 0 10px #4f46e5); }
+
+        /* --- মেইন টুলস ডিজাইন --- */
+        .card-inner { background: #fff; color: #1e293b; border-radius: 25px; padding: 20px; min-height: 520px; margin-top: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .back-btn { background: #4f46e5; color: #fff; border: none; padding: 8px 18px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-bottom: 10px; }
+        
+        .top-nav { background: #0f111a; padding: 6px; border-radius: 50px; display: flex; justify-content: space-around; margin-bottom: 10px; }
+        .tab-btn { background: transparent; color: #94a3b8; border: none; padding: 10px 25px; border-radius: 50px; font-weight: 800; cursor: pointer; font-size: 13px; }
+        .tab-btn.active { background: #fff; color: #05060f; box-shadow: 0 0 15px #fff; }
+
+        .input-box { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #e2e8f0; background: #f8fafc; font-size: 14px; outline: none; margin-top: 5px; }
+        .action-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: #1e293b; color: #fff; font-weight: 800; cursor: pointer; margin: 15px 0; transition: 0.3s; }
+        .action-btn:hover { background: #4f46e5; transform: translateY(-2px); }
+
+        .console { background: #0b0e14; color: #38bdf8; padding: 12px; border-radius: 12px; height: 230px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px; border: 1px solid #1e293b; }
+        .live-line { color: #22c55e; font-weight: bold; padding: 2px 0; }
+        .die-line { color: #ef4444; padding: 2px 0; }
+
+        /* --- স্ট্যাটাস ফুটার (image_2ae0dd.png Style) --- */
+        .bottom-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; }
+        .stat-wrap { display: flex; gap: 8px; }
+        .mini-box { background: #f1f5f9; padding: 6px 12px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0; min-width: 80px; }
+        .mini-box b { display: block; font-size: 15px; line-height: 1.1; }
+        .mini-box span { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; }
+
+        .icon-actions { display: flex; gap: 8px; }
+        .circle-btn { background: #f1f5f9; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 10px; cursor: pointer; border: 1px solid #cbd5e1; font-size: 18px; transition: 0.2s; }
+        .circle-btn:hover { background: #e2e8f0; transform: scale(1.1); }
+    </style>
 </head>
 <body>
 
-<div class="left-panel">
-    <div class="panel-header">LIVE CHECKER</div>
-    <div class="info">ℹ️ No token needed - Profile URL checking</div>
-    <div class="panel-header">Account list: <span id="account-count">0</span> acc.</div>
-    <div class="account-list" id="account-list" contenteditable="true" spellcheck="false">Paste UIDs here...</div>
-    <div class="btn-group">
-        <button class="btn btn-clear" onclick="clearAll()">Clear</button>
-        <button class="btn btn-check" onclick="startCheck()">Check</button>
+<div class="container">
+    <!-- HOME -->
+    <div id="p-home">
+        <h1 style="text-align:center; font-size: 35px; margin-top: 40px; color:#fff;">Longisir VIP Hub</h1>
+        <p style="text-align:center; opacity:0.5; letter-spacing:4px; font-size:11px; margin-bottom: 40px;">SECURE AUTOMATION TOOLS</p>
+        <div class="home-grid">
+            <div class="h-card" onclick="openTool('2fa')"><span>🔐</span><h3>2FA Auth</h3></div>
+            <div class="h-card" onclick="openTool('mail')"><span>📧</span><h3>Mail API</h3></div>
+            <div class="h-card" onclick="openTool('live')"><span>✅</span><h3>Live Checker</h3></div>
+        </div>
     </div>
-</div>
 
-<div class="middle-panel">
-    <div class="status-bar">
-        <span>Check result: <span id="timer">00:00 sec.</span></span>
-    </div>
-    <div class="result-container" id="result-container">
-        <div style="color: #666; text-align: center; padding: 20px;">Results will appear here...</div>
-    </div>
-    <div class="progress-footer">
-        <div class="progress-text" id="progress-text">0%</div>
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill"></div>
+    <!-- MAIN TOOLS -->
+    <div id="p-tools" class="hidden">
+        <button class="back-btn" onclick="goHome()">← Back</button>
+        <div class="top-nav">
+            <button class="tab-btn" id="t-2fa" onclick="tab('2fa')">2FA</button>
+            <button class="tab-btn" id="t-mail" onclick="tab('mail')">MAIL BOX</button>
+            <button class="tab-btn" id="t-live" onclick="tab('live')">LIVE CHECKER</button>
+        </div>
+
+        <div class="card-inner">
+            <!-- Checker -->
+            <div id="box-live" class="hidden">
+                <h3 style="margin-bottom:10px;">FB Real-Time Checker</h3>
+                <textarea id="inp-uids" class="input-box" rows="5" placeholder="UID|PASS|2FA (One per line)"></textarea>
+                <button class="action-btn" id="btn-run" onclick="processCheck()">START VALIDATION</button>
+                <div class="console" id="log-box">Ready for scan...</div>
+
+                <div class="bottom-bar">
+                    <div class="stat-wrap">
+                        <div class="mini-box" style="color:#22c55e;"><b id="stat-lp">0%</b><span id="stat-lc">0 Live</span></div>
+                        <div class="mini-box" style="color:#ef4444;"><b id="stat-dp">0%</b><span id="stat-dc">0 Die</span></div>
+                        <div class="mini-box" style="color:#4f46e5;"><b id="stat-total">0</b><span>Total</span></div>
+                    </div>
+                    <div class="icon-actions">
+                        <div class="circle-btn" onclick="location.reload()" title="Refresh">🗑️</div>
+                        <div class="circle-btn" onclick="downloadCSV()" title="Download CSV (Excel)">📥</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2FA & Mail (Placeholders) -->
+            <div id="box-2fa" class="hidden"><h2>2FA Module Ready</h2></div>
+            <div id="box-mail" class="hidden"><h2>Mail API Connected</h2></div>
         </div>
     </div>
 </div>
 
 <script>
-let accounts = [];
-let activeCount = 0;
-let blockedCount = 0;
-let startTime = 0;
-let timerInterval;
+    // আপনি যে টোকেনটি দিয়েছেন
+    const TOKEN = "EAAGNO4LRfssBAK7ZA9ZA6ZAZA1ZBAZA2ZBAZA3ZBAZA4ZBAZA5ZBAZA6ZBAZA7ZBAZA8ZBAZA9ZBAZA0ZBAZA1ZBAZA2ZBAZA3ZBAZA4ZBAZA5ZBAZA6ZBAZA7ZBAZA8ZBAZA9ZBAZA0";
+    let liveRecords = [];
 
-document.getElementById('account-list').addEventListener('input', function() {
-    var text = this.innerText;
-    if(text === 'Paste UIDs here...') return;
-    
-    var uids = text.split('\n').filter(uid => uid.trim() !== '' && uid.trim() !== 'Paste UIDs here...');
-    accounts = uids;
-    document.getElementById('account-count').textContent = accounts.length;
-});
-
-function startCheck() {
-    if(accounts.length === 0) {
-        alert('❌ No UIDs found!\n\nPlease paste UIDs in the left panel.');
-        return;
+    function openTool(x) { document.getElementById('p-home').classList.add('hidden'); document.getElementById('p-tools').classList.remove('hidden'); tab(x); }
+    function goHome() { document.getElementById('p-tools').classList.add('hidden'); document.getElementById('p-home').classList.remove('hidden'); }
+    function tab(x) {
+        ['2fa', 'mail', 'live'].forEach(i => { document.getElementById('box-'+i).classList.add('hidden'); document.getElementById('t-'+i).classList.remove('active'); });
+        document.getElementById('box-'+x).classList.remove('hidden'); document.getElementById('t-'+x).classList.add('active');
     }
-    
-    activeCount = 0;
-    blockedCount = 0;
-    startTime = Date.now();
-    
-    document.getElementById('result-container').innerHTML = '';
-    document.getElementById('progress-fill').style.width = '0%';
-    document.getElementById('progress-text').textContent = '0%';
-    
-    timerInterval = setInterval(updateTimer, 100);
-    
-    processAccounts(0);
-}
 
-function processAccounts(index) {
-    if(index >= accounts.length) {
-        clearInterval(timerInterval);
-        return;
-    }
-    
-    var uid = accounts[index].trim();
-    
-    // ✅ Check using profile URL with no-cors mode
-    checkUIDByURL(uid, function(isActive) {
-        displayResult(uid, index + 1, isActive);
+    async function processCheck() {
+        const input = document.getElementById('inp-uids').value.trim();
+        if(!input) return;
+        const lines = input.split('\n').filter(l => l.trim() !== "");
+        const log = document.getElementById('log-box');
+        const btn = document.getElementById('btn-run');
         
-        var progress = ((index + 1) / accounts.length) * 100;
-        document.getElementById('progress-fill').style.width = progress + '%';
-        document.getElementById('progress-text').textContent = progress.toFixed(2) + '%';
-        
-        setTimeout(function() {
-            processAccounts(index + 1);
-        }, 300);
-    });
-}
+        btn.disabled = true; btn.innerText = "CHECKING...";
+        log.innerHTML = "Connecting to Graph API...<br>";
+        let liveCount = 0, dieCount = 0; liveRecords = [];
 
-function checkUIDByURL(uid, callback) {
-    // Create an image element to test if profile exists
-    var img = new Image();
-    var profilePicUrl = 'https://graph.facebook.com/' + uid + '/picture?type=large';
-    
-    img.onload = function() {
-        // If image loads, profile exists = Active
-        callback(true);
-    };
-    
-    img.onerror = function() {
-        // If image fails to load, profile doesn't exist = Blocked
-        callback(false);
-    };
-    
-    img.src = profilePicUrl;
-    
-    // Timeout after 3 seconds
-    setTimeout(function() {
-        if(!img.complete) {
-            callback(false);
+        for(let i=0; i<lines.length; i++) {
+            const currentLine = lines[i].trim();
+            const uid = currentLine.split(/[|:]/)[0].trim();
+
+            try {
+                // নিখুঁত মেথড: ইউজারের নাম চেক করা
+                const res = await fetch(`https://graph.facebook.com/${uid}?fields=name&access_token=${TOKEN}`);
+                const data = await res.json();
+
+                if(data.name) {
+                    liveCount++;
+                    liveRecords.push(currentLine);
+                    log.innerHTML += `<div class="live-line">[${i+1}] ${uid} -> LIVE ✅</div>`;
+                } else {
+                    dieCount++;
+                    log.innerHTML += `<div class="die-line">[${i+1}] ${uid} -> DIE/BLOCK ❌</div>`;
+                }
+            } catch {
+                dieCount++;
+                log.innerHTML += `<div class="die-line">[${i+1}] ${uid} -> ERROR ❌</div>`;
+            }
+
+            // রিয়েল-টাইম স্ট্যাটাস আপডেট (image_2ae0dd.png এর মতো)
+            const total = lines.length;
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-lc').innerText = liveCount + " Live";
+            document.getElementById('stat-dc').innerText = dieCount + " Die";
+            document.getElementById('stat-lp').innerText = Math.round((liveCount/total)*100) + "%";
+            document.getElementById('stat-dp').innerText = Math.round((dieCount/total)*100) + "%";
+            log.scrollTop = log.scrollHeight;
         }
-    }, 3000);
-}
-
-function displayResult(uid, position, isActive) {
-    if(isActive) {
-        activeCount++;
-    } else {
-        blockedCount++;
+        btn.disabled = false; btn.innerText = "START VALIDATION";
     }
-    
-    var container = document.getElementById('result-container');
-    var div = document.createElement('div');
-    div.className = isActive ? 'result-item result-active' : 'result-item result-blocked';
-    div.innerHTML = '<span>' + position + '. ' + uid + '</span><span>' + (isActive ? '→ Active' : '→ Blocked') + '</span>';
-    
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-}
 
-function updateTimer() {
-    var elapsed = Math.floor((Date.now() - startTime) / 1000);
-    var minutes = Math.floor(elapsed / 60);
-    var seconds = elapsed % 60;
-    var timeStr = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
-    
-    document.getElementById('timer').textContent = timeStr + ' sec.';
-}
-
-function clearAll() {
-    accounts = [];
-    document.getElementById('account-list').innerText = 'Paste UIDs here...';
-    document.getElementById('result-container').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Results will appear here...</div>';
-    document.getElementById('account-count').textContent = '0';
-    document.getElementById('progress-fill').style.width = '0%';
-    document.getElementById('progress-text').textContent = '0%';
-    document.getElementById('timer').textContent = '00:00 sec.';
-    clearInterval(timerInterval);
-}
+    function downloadCSV() {
+        if(liveRecords.length === 0) return alert("No live IDs to save!");
+        let csv = "UID,PASSWORD,2FA_KEY\n";
+        liveRecords.forEach(line => {
+            const p = line.split(/[|:]/);
+            csv += `${p[0]||''},${p[1]||''},${p[2]||''}\n`;
+        });
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `Longisir_Live_${Date.now()}.csv`;
+        a.click();
+    }
 </script>
 </body>
 </html>
