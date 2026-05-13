@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REAL LIVE CHECKER</title>
+<title>LIVE CHECKER - WORKING</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 body { background: 
@@ -15,13 +15,9 @@ body { background:
 ; padding: 15px; display: flex; flex-direction: column; }
 .panel-header { background: 
 ; padding: 8px 12px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; color: #aaa; }
-.token-input { width: 100%; background: 
-; border: 1px solid #333; border-radius: 5px; padding: 8px; color: 
-; font-family: 'Courier New', monospace; font-size: 11px; outline: none; margin-bottom: 10px; }
 .account-list { flex: 1; background: 
 ; border: 1px solid #333; border-radius: 5px; padding: 10px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 11px; color: 
 ; margin-bottom: 10px; }
-.account-item { padding: 2px 0; cursor: pointer; }
 .btn-group { display: flex; gap: 10px; }
 .btn { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; }
 .btn-clear { background: 
@@ -52,7 +48,7 @@ body { background:
 ); width: 0%; transition: width 0.3s; }
 .progress-text { font-size: 13px; font-weight: bold; color: 
 ; }
-.warning { background: 
+.info { background: 
 ; border: 1px solid 
 ; padding: 8px; border-radius: 5px; margin-bottom: 10px; font-size: 11px; color: 
 ; }
@@ -65,9 +61,8 @@ body { background:
 <body>
 
 <div class="left-panel">
-    <div class="panel-header">REAL API CHECKER</div>
-    <div class="warning">⚠️ Access Token required for real checking</div>
-    <input type="text" id="token-input" class="token-input" placeholder="Paste Facebook Access Token here...">
+    <div class="panel-header">LIVE CHECKER</div>
+    <div class="info">ℹ️ No token needed - Profile URL checking</div>
     <div class="panel-header">Account list: <span id="account-count">0</span> acc.</div>
     <div class="account-list" id="account-list" contenteditable="true" spellcheck="false">Paste UIDs here...</div>
     <div class="btn-group">
@@ -108,13 +103,6 @@ document.getElementById('account-list').addEventListener('input', function() {
 });
 
 function startCheck() {
-    var token = document.getElementById('token-input').value.trim();
-    
-    if(!token) {
-        alert('❌ Access Token required!\n\nPlease paste your Facebook Access Token first.');
-        return;
-    }
-    
     if(accounts.length === 0) {
         alert('❌ No UIDs found!\n\nPlease paste UIDs in the left panel.');
         return;
@@ -130,10 +118,10 @@ function startCheck() {
     
     timerInterval = setInterval(updateTimer, 100);
     
-    processAccountsReal(0, token);
+    processAccounts(0);
 }
 
-function processAccountsReal(index, token) {
+function processAccounts(index) {
     if(index >= accounts.length) {
         clearInterval(timerInterval);
         return;
@@ -141,37 +129,43 @@ function processAccountsReal(index, token) {
     
     var uid = accounts[index].trim();
     
-    // ✅ REAL Facebook Graph API Call
-    var apiUrl = 'https://graph.facebook.com/v18.0/' + uid + '?fields=id,name&access_token=' + token;
+    // ✅ Check using profile URL with no-cors mode
+    checkUIDByURL(uid, function(isActive) {
+        displayResult(uid, index + 1, isActive);
+        
+        var progress = ((index + 1) / accounts.length) * 100;
+        document.getElementById('progress-fill').style.width = progress + '%';
+        document.getElementById('progress-text').textContent = progress.toFixed(2) + '%';
+        
+        setTimeout(function() {
+            processAccounts(index + 1);
+        }, 300);
+    });
+}
+
+function checkUIDByURL(uid, callback) {
+    // Create an image element to test if profile exists
+    var img = new Image();
+    var profilePicUrl = 'https://graph.facebook.com/' + uid + '/picture?type=large';
     
-    fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            // ✅ Check if account exists
-            var isActive = (data.id && !data.error);
-            
-            displayResult(uid, index + 1, isActive);
-            
-            var progress = ((index + 1) / accounts.length) * 100;
-            document.getElementById('progress-fill').style.width = progress + '%';
-            document.getElementById('progress-text').textContent = progress.toFixed(2) + '%';
-            
-            // Continue to next UID after delay
-            setTimeout(function() {
-                processAccountsReal(index + 1, token);
-            }, 500);
-        })
-        .catch(error => {
-            displayResult(uid, index + 1, false);
-            
-            var progress = ((index + 1) / accounts.length) * 100;
-            document.getElementById('progress-fill').style.width = progress + '%';
-            document.getElementById('progress-text').textContent = progress.toFixed(2) + '%';
-            
-            setTimeout(function() {
-                processAccountsReal(index + 1, token);
-            }, 500);
-        });
+    img.onload = function() {
+        // If image loads, profile exists = Active
+        callback(true);
+    };
+    
+    img.onerror = function() {
+        // If image fails to load, profile doesn't exist = Blocked
+        callback(false);
+    };
+    
+    img.src = profilePicUrl;
+    
+    // Timeout after 3 seconds
+    setTimeout(function() {
+        if(!img.complete) {
+            callback(false);
+        }
+    }, 3000);
 }
 
 function displayResult(uid, position, isActive) {
