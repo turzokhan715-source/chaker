@@ -3,238 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CHECK FB TOOLS</title>
+<title>REAL LIVE CHECKER</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 body { background: 
 ; color: 
 ; display: flex; height: 100vh; overflow: hidden; }
-
-/* Left Panel */
-.left-panel { 
-    width: 280px; 
-    background: 
-; 
-    padding: 15px; 
-    display: flex; 
-    flex-direction: column; 
-    border-right: 1px solid #333; 
-}
-.panel-header { 
-    background: 
-; 
-    padding: 8px 12px; 
-    border-radius: 5px; 
-    margin-bottom: 10px; 
-    font-size: 12px; 
-    color: #aaa; 
-}
-.account-list { 
-    flex: 1; 
-    background: 
-; 
-    border: 1px solid #333; 
-    border-radius: 5px; 
-    padding: 10px; 
-    overflow-y: auto; 
-    font-family: 'Courier New', monospace; 
-    font-size: 11px; 
-    color: 
-; 
-    margin-bottom: 10px;
-}
-.account-item { 
-    padding: 2px 0; 
-    cursor: pointer; 
-}
-.account-item:hover { 
-    background: 
-; 
-}
-.checkbox-group { 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-    margin-bottom: 10px; 
-    font-size: 12px; 
-    color: #aaa; 
-}
-.checkbox-group input { 
-    cursor: pointer; 
-}
-.btn-group { 
-    display: flex; 
-    gap: 10px; 
-}
-.btn { 
-    flex: 1; 
-    padding: 10px; 
-    border: none; 
-    border-radius: 5px; 
-    font-weight: bold; 
-    cursor: pointer; 
-    font-size: 13px; 
-    transition: 0.3s; 
-}
-.btn-clear { 
-    background: 
-; 
-    color: 
-; 
-}
-.btn-clear:hover { 
-    background: 
-; 
-}
-.btn-check { 
-    background: 
-; 
-    color: 
-; 
-}
-.btn-check:hover { 
-    background: 
-; 
-}
-
-/* Middle Panel */
-.middle-panel { 
-    flex: 1; 
-    background: 
-; 
-    padding: 15px; 
-    display: flex; 
-    flex-direction: column; 
-}
-.status-bar { 
-    background: 
-; 
-    padding: 8px 12px; 
-    border-radius: 5px; 
-    margin-bottom: 10px; 
-    font-size: 12px; 
-    color: #aaa; 
-    display: flex; 
-    justify-content: space-between; 
-}
-.result-container { 
-    flex: 1; 
-    background: 
-; 
-    border: 1px solid #333; 
-    border-radius: 5px; 
-    padding: 10px; 
-    overflow-y: auto; 
-    font-family: 'Courier New', monospace; 
-    font-size: 12px; 
-}
-.result-item { 
-    padding: 4px 8px; 
-    margin-bottom: 3px; 
-    border-radius: 3px; 
-    display: flex; 
-    justify-content: space-between; 
-    animation: slideIn 0.2s; 
-}
-@keyframes slideIn { 
-    from { opacity: 0; transform: translateX(-10px); } 
-    to { opacity: 1; transform: translateX(0); } 
-}
-.result-active { 
-    background: rgba(0, 255, 0, 0.05); 
-    color: 
-; 
-}
-.result-blocked { 
-    background: rgba(255, 0, 0, 0.05); 
-    color: 
-; 
-}
-.progress-footer { 
-    background: 
-; 
-    padding: 10px 15px; 
-    border-radius: 5px; 
-    margin-top: 10px; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-}
-.progress-bar { 
-    flex: 1; 
-    height: 6px; 
-    background: #333; 
-    border-radius: 3px; 
-    overflow: hidden; 
-    margin: 0 15px; 
-}
-.progress-fill { 
-    height: 100%; 
-    background: linear-gradient(90deg, 
+.left-panel { width: 280px; background: 
+; padding: 15px; display: flex; flex-direction: column; border-right: 1px solid #333; }
+.middle-panel { flex: 1; background: 
+; padding: 15px; display: flex; flex-direction: column; }
+.panel-header { background: 
+; padding: 8px 12px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; color: #aaa; }
+.token-input { width: 100%; background: 
+; border: 1px solid #333; border-radius: 5px; padding: 8px; color: 
+; font-family: 'Courier New', monospace; font-size: 11px; outline: none; margin-bottom: 10px; }
+.account-list { flex: 1; background: 
+; border: 1px solid #333; border-radius: 5px; padding: 10px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 11px; color: 
+; margin-bottom: 10px; }
+.account-item { padding: 2px 0; cursor: pointer; }
+.btn-group { display: flex; gap: 10px; }
+.btn { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; }
+.btn-clear { background: 
+; color: 
+; }
+.btn-clear:hover { background: 
+; }
+.btn-check { background: 
+; color: 
+; }
+.btn-check:hover { background: 
+; }
+.status-bar { background: 
+; padding: 8px 12px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; color: #aaa; display: flex; justify-content: space-between; }
+.result-container { flex: 1; background: 
+; border: 1px solid #333; border-radius: 5px; padding: 10px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px; }
+.result-item { padding: 4px 8px; margin-bottom: 3px; border-radius: 3px; display: flex; justify-content: space-between; animation: slideIn 0.2s; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+.result-active { background: rgba(0, 255, 0, 0.05); color: 
+; }
+.result-blocked { background: rgba(255, 0, 0, 0.05); color: 
+; }
+.progress-footer { background: 
+; padding: 10px 15px; border-radius: 5px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+.progress-bar { flex: 1; height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin: 0 15px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, 
 , 
-); 
-    width: 0%; 
-    transition: width 0.3s; 
-}
-.progress-text { 
-    font-size: 13px; 
-    font-weight: bold; 
-    color: 
-; 
-}
-.btn-export { 
-    background: 
-; 
-    color: 
-; 
-    border: none; 
-    padding: 6px 15px; 
-    border-radius: 5px; 
-    cursor: pointer; 
-    font-size: 12px; 
-    font-weight: bold; 
-}
-.btn-export:hover { 
-    background: 
-; 
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar { 
-    width: 8px; 
-}
-::-webkit-scrollbar-track { 
-    background: 
-; 
-}
-::-webkit-scrollbar-thumb { 
-    background: #333; 
-    border-radius: 4px; 
-}
-::-webkit-scrollbar-thumb:hover { 
-    background: #444; 
-}
+); width: 0%; transition: width 0.3s; }
+.progress-text { font-size: 13px; font-weight: bold; color: 
+; }
+.warning { background: 
+; border: 1px solid 
+; padding: 8px; border-radius: 5px; margin-bottom: 10px; font-size: 11px; color: 
+; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: 
+; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
 </style>
 </head>
 <body>
 
-<!-- Left Panel -->
 <div class="left-panel">
+    <div class="panel-header">REAL API CHECKER</div>
+    <div class="warning">⚠️ Access Token required for real checking</div>
+    <input type="text" id="token-input" class="token-input" placeholder="Paste Facebook Access Token here...">
     <div class="panel-header">Account list: <span id="account-count">0</span> acc.</div>
-    <div class="account-list" id="account-list">
-        <div style="color: #666; text-align: center; padding: 20px;">Paste UIDs here...</div>
-    </div>
-    <div class="checkbox-group">
-        <input type="checkbox" id="check-friends">
-        <label for="check-friends">Check friends count</label>
-    </div>
+    <div class="account-list" id="account-list" contenteditable="true" spellcheck="false">Paste UIDs here...</div>
     <div class="btn-group">
         <button class="btn btn-clear" onclick="clearAll()">Clear</button>
         <button class="btn btn-check" onclick="startCheck()">Check</button>
     </div>
 </div>
 
-<!-- Middle Panel -->
 <div class="middle-panel">
     <div class="status-bar">
         <span>Check result: <span id="timer">00:00 sec.</span></span>
@@ -247,7 +88,6 @@ body { background:
         <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
         </div>
-        <button class="btn-export" onclick="exportResults()">📥 Export</button>
     </div>
 </div>
 
@@ -258,33 +98,25 @@ let blockedCount = 0;
 let startTime = 0;
 let timerInterval;
 
-// Paste detection
-document.getElementById('account-list').addEventListener('paste', function(e) {
-    e.preventDefault();
-    var text = e.clipboardData.getData('text');
-    var uids = text.split('\n').filter(uid => uid.trim() !== '');
+document.getElementById('account-list').addEventListener('input', function() {
+    var text = this.innerText;
+    if(text === 'Paste UIDs here...') return;
     
+    var uids = text.split('\n').filter(uid => uid.trim() !== '' && uid.trim() !== 'Paste UIDs here...');
     accounts = uids;
-    displayAccounts();
+    document.getElementById('account-count').textContent = accounts.length;
 });
 
-function displayAccounts() {
-    var container = document.getElementById('account-list');
-    container.innerHTML = '';
-    
-    accounts.forEach(function(uid, index) {
-        var div = document.createElement('div');
-        div.className = 'account-item';
-        div.textContent = (index + 1) + '. ' + uid.trim();
-        container.appendChild(div);
-    });
-    
-    document.getElementById('account-count').textContent = accounts.length;
-}
-
 function startCheck() {
+    var token = document.getElementById('token-input').value.trim();
+    
+    if(!token) {
+        alert('❌ Access Token required!\n\nPlease paste your Facebook Access Token first.');
+        return;
+    }
+    
     if(accounts.length === 0) {
-        alert('Please paste UIDs first!');
+        alert('❌ No UIDs found!\n\nPlease paste UIDs in the left panel.');
         return;
     }
     
@@ -298,30 +130,51 @@ function startCheck() {
     
     timerInterval = setInterval(updateTimer, 100);
     
-    processAccounts(0);
+    processAccountsReal(0, token);
 }
 
-function processAccounts(index) {
+function processAccountsReal(index, token) {
     if(index >= accounts.length) {
         clearInterval(timerInterval);
         return;
     }
     
-    setTimeout(function() {
-        var uid = accounts[index].trim();
-        checkAccount(uid, index + 1);
-        
-        var progress = ((index + 1) / accounts.length) * 100;
-        document.getElementById('progress-fill').style.width = progress + '%';
-        document.getElementById('progress-text').textContent = progress.toFixed(2) + '%';
-        
-        processAccounts(index + 1);
-    }, 150);
+    var uid = accounts[index].trim();
+    
+    // ✅ REAL Facebook Graph API Call
+    var apiUrl = 'https://graph.facebook.com/v18.0/' + uid + '?fields=id,name&access_token=' + token;
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            // ✅ Check if account exists
+            var isActive = (data.id && !data.error);
+            
+            displayResult(uid, index + 1, isActive);
+            
+            var progress = ((index + 1) / accounts.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = progress.toFixed(2) + '%';
+            
+            // Continue to next UID after delay
+            setTimeout(function() {
+                processAccountsReal(index + 1, token);
+            }, 500);
+        })
+        .catch(error => {
+            displayResult(uid, index + 1, false);
+            
+            var progress = ((index + 1) / accounts.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = progress.toFixed(2) + '%';
+            
+            setTimeout(function() {
+                processAccountsReal(index + 1, token);
+            }, 500);
+        });
 }
 
-function checkAccount(uid, position) {
-    var isActive = isUIDActive(uid);
-    
+function displayResult(uid, position, isActive) {
     if(isActive) {
         activeCount++;
     } else {
@@ -337,21 +190,6 @@ function checkAccount(uid, position) {
     container.scrollTop = container.scrollHeight;
 }
 
-function isUIDActive(uid) {
-    if(uid.length < 10 || uid.length > 16) return false;
-    if(!/^\d+$/.test(uid)) return false;
-    
-    var sum = 0;
-    for(var i = 0; i < uid.length; i++) {
-        sum += parseInt(uid.charAt(i));
-    }
-    
-    var firstDigit = parseInt(uid.charAt(0));
-    var lastDigit = parseInt(uid.charAt(uid.length - 1));
-    
-    return (sum % 2 === 0) || (firstDigit >= 1 && firstDigit <= 5 && lastDigit !== 0);
-}
-
 function updateTimer() {
     var elapsed = Math.floor((Date.now() - startTime) / 1000);
     var minutes = Math.floor(elapsed / 60);
@@ -363,22 +201,13 @@ function updateTimer() {
 
 function clearAll() {
     accounts = [];
-    document.getElementById('account-list').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Paste UIDs here...</div>';
+    document.getElementById('account-list').innerText = 'Paste UIDs here...';
     document.getElementById('result-container').innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">Results will appear here...</div>';
     document.getElementById('account-count').textContent = '0';
     document.getElementById('progress-fill').style.width = '0%';
     document.getElementById('progress-text').textContent = '0%';
     document.getElementById('timer').textContent = '00:00 sec.';
     clearInterval(timerInterval);
-}
-
-function exportResults() {
-    if(accounts.length === 0) {
-        alert('No results to export!');
-        return;
-    }
-    
-    alert('Export feature: Results will be downloaded as CSV file');
 }
 </script>
 </body>
