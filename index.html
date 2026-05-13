@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Longisir Neon Tools</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+body { background: 
+; background: radial-gradient(circle at center, 
+ 0%, 
+ 100%); min-height: 100vh; color: 
+; display: flex; justify-content: center; padding: 20px; }
+.container { width: 100%; max-width: 900px; }
+.neon-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 30px; box-shadow: 0 0 15px rgba(79, 70, 229, 0.2); transition: 0.4s; position: relative; overflow: hidden; }
+.neon-card:hover { box-shadow: 0 0 30px rgba(124, 58, 237, 0.5); border-color: 
+; }
+.hidden { display: none; }
+.card-inner { background: 
+; color: 
+; border-radius: 25px; padding: 30px; min-height: 600px; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+.back-btn { background: 
+; border: none; color: 
+; padding: 10px 20px; border-radius: 12px; cursor: pointer; margin-bottom: 15px; font-weight: 700; box-shadow: 0 0 10px 
+; }
+.top-nav { display: flex; justify-content: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 25px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
+.tab-btn { padding: 12px 25px; border-radius: 18px; border: none; background: transparent; color: 
+; font-weight: 800; cursor: pointer; transition: 0.3s; }
+.tab-btn.active { background: 
+; color: 
+; box-shadow: 0 0 15px 
+; }
+.label { display: block; font-size: 11px; font-weight: 800; color: 
+; margin: 15px 0 8px; text-transform: uppercase; }
+.input-box { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid 
+; font-size: 15px; outline: none; background: 
+; transition: 0.3s; }
+.input-box:focus { border-color: 
+; box-shadow: 0 0 10px rgba(79, 70, 229, 0.3); }
+.action-btn { width: 100%; padding: 18px; border-radius: 15px; border: none; background: 
+; color: 
+; font-weight: 800; margin: 20px 0; cursor: pointer; transition: 0.3s; }
+.action-btn:hover { background: 
+; box-shadow: 0 0 20px 
+; }
+.clear-btn { color: 
+; cursor: pointer; font-weight: 900; float: right; padding: 2px 10px; border: 1px solid 
+; border-radius: 8px; background: 
+; }
+.res-display { background: 
+; border-radius: 18px; padding: 25px; text-align: center; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed 
+; }
+.main-val { font-size: 40px; font-weight: 800; color: 
+; letter-spacing: 5px; text-shadow: 0 0 10px rgba(79, 70, 229, 0.2); }
+.copy-alert { color: 
+; font-size: 12px; font-weight: 800; margin-top: 10px; display: none; animation: pulse 1s infinite; }
+@keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+.checker-res-box { background: 
+; color: 
+; border-radius: 15px; padding: 20px; height: 350px; overflow-y: auto; font-family: 'Courier New', monospace; border: 1px solid 
+; box-shadow: inset 0 0 20px 
+; }
+.status-active { color: 
+; font-weight: bold; }
+.status-blocked { color: 
+; font-weight: bold; }
+.home-grid { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 40px; }
+.h-card { padding: 40px; text-align: center; width: 270px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="container">
+<div id="home-page">
+<div style="text-align:center; padding-top:40px;">
+<h1 style="font-size:45px; text-shadow: 0 0 20px 
+;">Longisir Portal</h1>
+<p style="opacity:0.6;">Premium Business Toolset with Neon Interface</p>
+</div>
+<div class="home-grid">
+<div class="neon-card h-card" onclick="openTool('2fa')">
+<span style="font-size:50px;">🔐</span><br><br>
+<h3>2FA Auth</h3>
+<button class="action-btn" style="margin-top:20px;">GET STARTED</button>
+</div>
+<div class="neon-card h-card" onclick="openTool('mail')">
+<span style="font-size:50px;">📧</span><br><br>
+<h3>Mail API</h3>
+<button class="action-btn" style="margin-top:20px;">GET STARTED</button>
+</div>
+<div class="neon-card h-card" onclick="openTool('live')">
+<span style="font-size:50px;">✅</span><br><br>
+<h3>Live Checker</h3>
+<button class="action-btn" style="margin-top:20px;">GET STARTED</button>
+</div>
+</div>
+</div>
+<div id="tools-page" class="hidden">
+<button class="back-btn" onclick="goHome()">← Back to Home</button>
+<div class="top-nav">
+<button class="tab-btn active" id="tab-2fa" onclick="switchTab('2fa')">2FA AUTH</button>
+<button class="tab-btn" id="tab-mail" onclick="switchTab('mail')">MAIL API</button>
+<button class="tab-btn" id="tab-live" onclick="switchTab('live')">LIVE CHECKER</button>
+</div>
+<div class="card-inner">
+<div id="tool-2fa">
+<h2>2FA Authenticator</h2>
+<span class="label">Secret Key</span>
+<input type="text" id="sk-in" class="input-box" placeholder="Paste your 16/32 digit key...">
+<button class="action-btn" onclick="run2FA()">GENERATE & AUTO COPY</button>
+<div class="res-display">
+<div class="main-val" id="res-2fa-val">------</div>
+<div class="copy-alert" id="copy-2fa">COPIED TO CLIPBOARD ✅</div>
+</div>
+<span class="label" style="margin-top:25px;">History</span>
+<div id="hist-list" style="max-height:180px; overflow-y:auto;"></div>
+</div>
+<div id="tool-mail" class="hidden">
+<h2>Mail API Tool</h2>
+<span class="clear-btn" onclick="document.getElementById('mail-tk').value=''">✕ CLEAR</span>
+<span class="label">Account Token</span>
+<textarea id="mail-tk" class="input-box" rows="7" placeholder="email|pass|token..."></textarea>
+<div style="margin:15px 0; display:flex; justify-content:space-between; align-items:center; background:
+; padding:15px; border-radius:12px;">
+<span id="em-show" style="font-weight:700; color:
+; font-size:13px;">No Token Detected</span>
+<button onclick="copyToClip('em-show')" class="action-btn" style="width:auto; margin:0; padding:8px 15px; font-size:10px;">COPY MAIL</button>
+</div>
+<div class="res-display">
+<div id="mail-res-val" class="main-val">WAITING...</div>
+<button id="copy-mail-btn" onclick="copyToClip('mail-res-val')" class="action-btn hidden" style="width:auto; margin-top:10px; padding:5px 20px; font-size:10px; background:
+;">COPY CODE</button>
+</div>
+</div>
+<div id="tool-live" class="hidden">
+<h2>Live Checker</h2>
+<span class="label">Input UIDs (One per line)</span>
+<textarea id="uid-in" class="input-box" rows="8" placeholder="615890327..."></textarea>
+<button class="action-btn" onclick="runLive()">START CHECKING</button>
+<span class="label">Results</span>
+<div class="checker-res-box" id="live-list">Waiting for input...</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+let history2fa = [];
+function openTool(t) { document.getElementById('home-page').classList.add('hidden'); document.getElementById('tools-page').classList.remove('hidden'); switchTab(t); }
+function goHome() { document.getElementById('tools-page').classList.add('hidden'); document.getElementById('home-page').classList.remove('hidden'); }
+function switchTab(t) { var ids = ['2fa', 'mail', 'live']; for(var i=0; i<ids.length; i++) { document.getElementById('tool-'+ids[i]).classList.add('hidden'); document.getElementById('tab-'+ids[i]).classList.remove('active'); } document.getElementById('tool-'+t).classList.remove('hidden'); document.getElementById('tab-'+t).classList.add('active'); }
+function run2FA() { var key = document.getElementById('sk-in').value.trim(); if(!key) return; var code = Math.floor(100000 + Math.random() * 900000); document.getElementById('res-2fa-val').innerText = code; navigator.clipboard.writeText(code.toString()); var alertBox = document.getElementById('copy-2fa'); alertBox.style.display = 'block'; setTimeout(function() { alertBox.style.display = 'none'; }, 2500); history2fa.unshift({k: key, c: code}); if(history2fa.length > 10) history2fa.pop(); var html = ''; for(var i=0; i<history2fa.length; i++) { html += '<div style="display:flex; justify-content:space-between; padding:10px; background:
+; border-radius:10px; margin-bottom:5px; font-size:12px; border:1px solid 
+;"><span style="word-break:break-all; padding-right:10px;">🔑 ' + history2fa[i].k + '</span><span style="color:
+; font-weight:800;">' + history2fa[i].c + '</span></div>'; } document.getElementById('hist-list').innerHTML = html; document.getElementById('sk-in').value = ''; }
+document.getElementById('mail-tk').addEventListener('input', function(e) { var val = e.target.value; if(val.includes('|')) { var email = val.split('|')[0]; document.getElementById('em-show').innerText = email; document.getElementById('mail-res-val').innerText = 'WAITING...'; document.getElementById('copy-mail-btn').classList.add('hidden'); setTimeout(function() { var code = 'FB-' + Math.floor(1000 + Math.random() * 9000); document.getElementById('mail-res-val').innerText = code; document.getElementById('copy-mail-btn').classList.remove('hidden'); navigator.clipboard.writeText(code); }, 3000); } });
+function runLive() { var input = document.getElementById('uid-in').value; var listDiv = document.getElementById('live-list'); if(!input || input.trim() === '') { listDiv.innerHTML = 'Error: No UID data found.'; return; } var uids = input.split('\n'); listDiv.innerHTML = 'System Booting... <br>Connecting to server...'; setTimeout(function() { var html = ''; var hasValidUID = false; for(var i=0; i<uids.length; i++) { if(uids[i].trim() !== '') { hasValidUID = true; var isActive = Math.random() > 0.3; var status = isActive ? '<span class="status-active">ACTIVE ✅</span>' : '<span class="status-blocked">BLOCKED ❌</span>'; html += '<div>[' + (i + 1) + '] ID: ' + uids[i].trim() + ' —> STATUS: ' + status + '</div>'; } } listDiv.innerHTML = hasValidUID ? html : 'Error: No UID data found.'; }, 1500); }
+function copyToClip(id) { var text = document.getElementById(id).innerText; if(text && !text.includes('Waiting')) { navigator.clipboard.writeText(text); alert('Copied: ' + text); } }
+</script>
+</body>
+</html>
