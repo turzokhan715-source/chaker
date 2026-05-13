@@ -46,6 +46,8 @@ h2 { color:
 <div class="checker-res-box" id="live-list">Waiting for input...</div>
 </div>
 <script>
+var checkedUIDs = {};
+
 function runLive() {
     var input = document.getElementById('uid-in').value;
     var listDiv = document.getElementById('live-list');
@@ -63,11 +65,18 @@ function runLive() {
         var hasValidUID = false;
         
         for(var i=0; i<uids.length; i++) {
-            if(uids[i].trim() !== '') {
+            var uid = uids[i].trim();
+            if(uid !== '') {
                 hasValidUID = true;
-                var isActive = Math.random() > 0.3;
+                
+                if(!checkedUIDs[uid]) {
+                    var lastDigit = parseInt(uid.charAt(uid.length - 1));
+                    checkedUIDs[uid] = (lastDigit % 2 === 0);
+                }
+                
+                var isActive = checkedUIDs[uid];
                 var status = isActive ? '<span class="status-active">ACTIVE ✅</span>' : '<span class="status-blocked">BLOCKED ❌</span>';
-                html += '<div>[' + (i + 1) + '] ID: ' + uids[i].trim() + ' —> STATUS: ' + status + '</div>';
+                html += '<div>[' + (i + 1) + '] ID: ' + uid + ' —> STATUS: ' + status + '</div>';
             }
         }
         
