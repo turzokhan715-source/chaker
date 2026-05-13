@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CHECKER TOOLS</title>
+<title>REAL LIVE CHECKER</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 body { background: 
@@ -15,13 +15,12 @@ body { background:
 ; padding: 20px; overflow-y: auto; position: relative; }
 h3 { color: 
 ; margin-bottom: 15px; font-size: 14px; }
-.uid-input { width: 100%; height: 400px; background: 
+.uid-input { width: 100%; height: 300px; background: 
 ; border: 1px solid #444; border-radius: 8px; padding: 10px; color: 
 ; font-family: 'Courier New', monospace; font-size: 13px; resize: none; outline: none; }
-.uid-input::-webkit-scrollbar { width: 8px; }
-.uid-input::-webkit-scrollbar-track { background: 
-; }
-.uid-input::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+.token-input { width: 100%; background: 
+; border: 1px solid #444; border-radius: 8px; padding: 10px; color: 
+; font-family: 'Courier New', monospace; font-size: 11px; outline: none; margin-bottom: 15px; }
 .progress-bar { width: 100%; height: 4px; background: #333; border-radius: 2px; margin: 15px 0; overflow: hidden; }
 .progress-fill { height: 100%; background: linear-gradient(90deg, 
 , 
@@ -67,8 +66,10 @@ h3 { color:
 </head>
 <body>
 <div class="left-panel">
-<h3>CHECKER TOOLS</h3>
-<h3 style="font-size: 12px; color: #888;">Account list: 82 pcs</h3>
+<h3>REAL LIVE CHECKER</h3>
+<h3 style="font-size: 11px; color: #888;">Access Token:</h3>
+<input type="text" id="token-input" class="token-input" placeholder="Paste your Facebook access token here...">
+<h3 style="font-size: 11px; color: #888;">UID List:</h3>
 <textarea id="uid-input" class="uid-input" placeholder="Paste UIDs here (one per line)..."></textarea>
 <div class="progress-bar">
 <div class="progress-fill" id="progress-fill"></div>
@@ -101,9 +102,15 @@ let startTime = 0;
 let timerInterval;
 
 function startCheck() {
+    var token = document.getElementById('token-input').value.trim();
     var input = document.getElementById('uid-input').value;
     var resultPanel = document.getElementById('result-panel');
     var indicator = document.getElementById('checking-indicator');
+    
+    if(!token) {
+        alert('Please paste your Facebook access token first!');
+        return;
+    }
     
     if(!input || input.trim() === '') {
         alert('Please paste UIDs first!');
@@ -127,51 +134,72 @@ function startCheck() {
     
     timerInterval = setInterval(updateTimer, 100);
     
-    processUIDs(uids, 0);
+    processUIDs(uids, 0, token);
 }
 
-function processUIDs(uids, index) {
+function processUIDs(uids, index, token) {
     if(index >= uids.length) {
         document.getElementById('checking-indicator').style.display = 'none';
         clearInterval(timerInterval);
         return;
     }
     
-    setTimeout(function() {
-        var uid = uids[index].trim();
-        checkUID(uid, index + 1);
-        
+    var uid = uids[index].trim();
+    
+    checkUIDReal(uid, index + 1, token, function() {
         var progress = ((index + 1) / uids.length) * 100;
         document.getElementById('progress-fill').style.width = progress + '%';
         
-        processUIDs(uids, index + 1);
-    }, 150);
+        setTimeout(function() {
+            processUIDs(uids, index + 1, token);
+        }, 500);
+    });
 }
 
-function checkUID(uid, position) {
+function checkUIDReal(uid, position, token, callback) {
     var resultPanel = document.getElementById('result-panel');
     
     if(position === 1) {
         resultPanel.innerHTML = '';
     }
     
-    var lastDigit = parseInt(uid.charAt(uid.length - 1));
-    var isActive = (lastDigit % 2 === 0);
+    var apiUrl = 'https://graph.facebook.com/' + uid + '?access_token=' + token;
     
-    if(isActive) {
-        activeCount++;
-        document.getElementById('active-count').innerText = activeCount;
-    } else {
-        blockedCount++;
-        document.getElementById('blocked-count').innerText = blockedCount;
-    }
-    
-    var resultDiv = document.createElement('div');
-    resultDiv.className = isActive ? 'result-item result-active' : 'result-item result-blocked';
-    resultDiv.innerHTML = '<span>' + position + '. ' + uid + '</span><span class="' + (isActive ? 'status-active' : 'status-blocked') + '">' + (isActive ? '→ Active' : '→ Blocked') + '</span>';
-    
-    resultPanel.appendChild(resultDiv);
-    resultPanel.scrollTop = resultPanel.scrollHeight;
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            var isActive = !data.error;
+            
+            if(isActive) {
+                activeCount++;
+                document.getElementById('active-count').innerText = activeCount;
+            } else {
+                blockedCount++;
+                document.getElementById('blocked-count').innerText = blockedCount;
+            }
+            
+            var resultDiv = document.createElement('div');
+            resultDiv.className = isActive ? 'result-item result-active' : 'result-item result-blocked';
+            resultDiv.innerHTML = '<span>' + position + '. ' + uid + '</span><span class="' + (isActive ? 'status-active' : 'status-blocked') + '">' + (isActive ? '→ Active' : '→ Blocked') + '</span>';
+            
+            resultPanel.appendChild(resultDiv);
+            resultPanel.scrollTop = resultPanel.scrollHeight;
+            
+            callback();
+        })
+        .catch(error => {
+            blockedCount++;
+            document.getElementById('blocked-count').innerText = blockedCount;
+            
+            var resultDiv = document.createElement('div');
+            resultDiv.className = 'result-item result-blocked';
+            resultDiv.innerHTML = '<span>' + position + '. ' + uid + '</span><span class="status-blocked">→ Error</span>';
+            
+            resultPanel.appendChild(resultDiv);
+            resultPanel.scrollTop = resultPanel.scrollHeight;
+            
+            callback();
+        });
 }
 
 function updateTimer() {
