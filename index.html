@@ -3,85 +3,201 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Checker</title>
+<title>CHECKER TOOLS</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 body { background: 
-; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
-.container { width: 100%; max-width: 700px; background: 
-; border-radius: 20px; padding: 40px; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
-h2 { color: 
-; margin-bottom: 20px; font-size: 28px; }
-.label { display: block; font-size: 11px; font-weight: 800; color: 
-; margin: 15px 0 8px; text-transform: uppercase; }
-.input-box { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid 
-; font-size: 15px; outline: none; background: 
-; transition: 0.3s; resize: vertical; }
-.input-box:focus { border-color: 
-; box-shadow: 0 0 10px rgba(79, 70, 229, 0.3); }
-.action-btn { width: 100%; padding: 18px; border-radius: 15px; border: none; background: 
 ; color: 
-; font-weight: 800; margin: 20px 0; cursor: pointer; transition: 0.3s; font-size: 16px; }
-.action-btn:hover { background: 
-; box-shadow: 0 0 20px 
+; display: flex; height: 100vh; overflow: hidden; }
+.left-panel { width: 300px; background: 
+; padding: 20px; display: flex; flex-direction: column; border-right: 1px solid #444; }
+.right-panel { flex: 1; background: 
+; padding: 20px; overflow-y: auto; position: relative; }
+h3 { color: 
+; margin-bottom: 15px; font-size: 14px; }
+.uid-input { width: 100%; height: 400px; background: 
+; border: 1px solid #444; border-radius: 8px; padding: 10px; color: 
+; font-family: 'Courier New', monospace; font-size: 13px; resize: none; outline: none; }
+.uid-input::-webkit-scrollbar { width: 8px; }
+.uid-input::-webkit-scrollbar-track { background: 
 ; }
-.checker-res-box { background: 
+.uid-input::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+.progress-bar { width: 100%; height: 4px; background: #333; border-radius: 2px; margin: 15px 0; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, 
+, 
+); width: 0%; transition: width 0.3s; }
+.status-text { font-size: 12px; color: #888; margin-bottom: 15px; }
+.btn-group { display: flex; gap: 10px; margin-top: auto; }
+.btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; }
+.btn-check { background: 
 ; color: 
-; border-radius: 15px; padding: 20px; height: 350px; overflow-y: auto; font-family: 'Courier New', monospace; border: 1px solid 
-; box-shadow: inset 0 0 20px 
-; line-height: 1.8; }
+; }
+.btn-check:hover { background: 
+; box-shadow: 0 0 15px 
+; }
+.btn-clear { background: 
+; color: 
+; }
+.btn-clear:hover { background: 
+; box-shadow: 0 0 15px 
+; }
+.result-item { padding: 8px 12px; margin-bottom: 5px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 13px; display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+.result-active { background: rgba(0, 255, 0, 0.1); border-left: 3px solid 
+; }
+.result-blocked { background: rgba(255, 0, 0, 0.1); border-left: 3px solid 
+; }
 .status-active { color: 
 ; font-weight: bold; }
 .status-blocked { color: 
 ; font-weight: bold; }
+.stats { position: fixed; bottom: 20px; right: 20px; background: 
+; padding: 15px 25px; border-radius: 10px; border: 1px solid #444; display: flex; gap: 20px; }
+.stat-item { text-align: center; }
+.stat-value { font-size: 24px; font-weight: bold; }
+.stat-label { font-size: 11px; color: #888; margin-top: 5px; }
+.stat-active { color: 
+; }
+.stat-blocked { color: 
+; }
+.checking-indicator { color: 
+; font-size: 12px; margin-top: 10px; animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 </style>
 </head>
 <body>
-<div class="container">
-<h2>Live Checker</h2>
-<span class="label">Input UIDs (One per line)</span>
-<textarea id="uid-in" class="input-box" rows="8" placeholder="615890327&#10;615890328&#10;615890329..."></textarea>
-<button class="action-btn" onclick="runLive()">START CHECKING</button>
-<span class="label">Results</span>
-<div class="checker-res-box" id="live-list">Waiting for input...</div>
+<div class="left-panel">
+<h3>CHECKER TOOLS</h3>
+<h3 style="font-size: 12px; color: #888;">Account list: 82 pcs</h3>
+<textarea id="uid-input" class="uid-input" placeholder="Paste UIDs here (one per line)..."></textarea>
+<div class="progress-bar">
+<div class="progress-fill" id="progress-fill"></div>
+</div>
+<div class="status-text" id="status-text">Check result: 0% • 00:00 sec</div>
+<div class="checking-indicator" id="checking-indicator" style="display: none;">⚡ Checking in progress...</div>
+<div class="btn-group">
+<button class="btn btn-check" onclick="startCheck()">Check</button>
+<button class="btn btn-clear" onclick="clearAll()">Clear</button>
+</div>
+</div>
+<div class="right-panel" id="result-panel">
+<h3>Results will appear here...</h3>
+</div>
+<div class="stats">
+<div class="stat-item">
+<div class="stat-value stat-active" id="active-count">0</div>
+<div class="stat-label">ACTIVE</div>
+</div>
+<div class="stat-item">
+<div class="stat-value stat-blocked" id="blocked-count">0</div>
+<div class="stat-label">BLOCKED</div>
+</div>
 </div>
 <script>
-var checkedUIDs = {};
+let activeCount = 0;
+let blockedCount = 0;
+let totalCount = 0;
+let startTime = 0;
+let timerInterval;
 
-function runLive() {
-    var input = document.getElementById('uid-in').value;
-    var listDiv = document.getElementById('live-list');
+function startCheck() {
+    var input = document.getElementById('uid-input').value;
+    var resultPanel = document.getElementById('result-panel');
+    var indicator = document.getElementById('checking-indicator');
     
     if(!input || input.trim() === '') {
-        listDiv.innerHTML = 'Error: No UID data found.';
+        alert('Please paste UIDs first!');
         return;
     }
     
-    var uids = input.split('\n');
-    listDiv.innerHTML = 'System Booting...<br>Connecting to server...';
+    activeCount = 0;
+    blockedCount = 0;
+    totalCount = 0;
+    startTime = Date.now();
+    
+    document.getElementById('active-count').innerText = '0';
+    document.getElementById('blocked-count').innerText = '0';
+    document.getElementById('progress-fill').style.width = '0%';
+    
+    resultPanel.innerHTML = '<h3>Checking accounts...</h3>';
+    indicator.style.display = 'block';
+    
+    var uids = input.split('\n').filter(uid => uid.trim() !== '');
+    totalCount = uids.length;
+    
+    timerInterval = setInterval(updateTimer, 100);
+    
+    processUIDs(uids, 0);
+}
+
+function processUIDs(uids, index) {
+    if(index >= uids.length) {
+        document.getElementById('checking-indicator').style.display = 'none';
+        clearInterval(timerInterval);
+        return;
+    }
     
     setTimeout(function() {
-        var html = '';
-        var hasValidUID = false;
+        var uid = uids[index].trim();
+        checkUID(uid, index + 1);
         
-        for(var i=0; i<uids.length; i++) {
-            var uid = uids[i].trim();
-            if(uid !== '') {
-                hasValidUID = true;
-                
-                if(!checkedUIDs[uid]) {
-                    var lastDigit = parseInt(uid.charAt(uid.length - 1));
-                    checkedUIDs[uid] = (lastDigit % 2 === 0);
-                }
-                
-                var isActive = checkedUIDs[uid];
-                var status = isActive ? '<span class="status-active">ACTIVE ✅</span>' : '<span class="status-blocked">BLOCKED ❌</span>';
-                html += '<div>[' + (i + 1) + '] ID: ' + uid + ' —> STATUS: ' + status + '</div>';
-            }
-        }
+        var progress = ((index + 1) / uids.length) * 100;
+        document.getElementById('progress-fill').style.width = progress + '%';
         
-        listDiv.innerHTML = hasValidUID ? html : 'Error: No UID data found.';
-    }, 1500);
+        processUIDs(uids, index + 1);
+    }, 150);
+}
+
+function checkUID(uid, position) {
+    var resultPanel = document.getElementById('result-panel');
+    
+    if(position === 1) {
+        resultPanel.innerHTML = '';
+    }
+    
+    var lastDigit = parseInt(uid.charAt(uid.length - 1));
+    var isActive = (lastDigit % 2 === 0);
+    
+    if(isActive) {
+        activeCount++;
+        document.getElementById('active-count').innerText = activeCount;
+    } else {
+        blockedCount++;
+        document.getElementById('blocked-count').innerText = blockedCount;
+    }
+    
+    var resultDiv = document.createElement('div');
+    resultDiv.className = isActive ? 'result-item result-active' : 'result-item result-blocked';
+    resultDiv.innerHTML = '<span>' + position + '. ' + uid + '</span><span class="' + (isActive ? 'status-active' : 'status-blocked') + '">' + (isActive ? '→ Active' : '→ Blocked') + '</span>';
+    
+    resultPanel.appendChild(resultDiv);
+    resultPanel.scrollTop = resultPanel.scrollHeight;
+}
+
+function updateTimer() {
+    var elapsed = Math.floor((Date.now() - startTime) / 1000);
+    var minutes = Math.floor(elapsed / 60);
+    var seconds = elapsed % 60;
+    var timeStr = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+    
+    var processed = activeCount + blockedCount;
+    var percentage = totalCount > 0 ? Math.floor((processed / totalCount) * 100) : 0;
+    
+    document.getElementById('status-text').innerText = 'Check result: ' + percentage + '% • ' + timeStr + ' sec';
+}
+
+function clearAll() {
+    document.getElementById('uid-input').value = '';
+    document.getElementById('result-panel').innerHTML = '<h3>Results will appear here...</h3>';
+    document.getElementById('active-count').innerText = '0';
+    document.getElementById('blocked-count').innerText = '0';
+    document.getElementById('progress-fill').style.width = '0%';
+    document.getElementById('status-text').innerText = 'Check result: 0% • 00:00 sec';
+    document.getElementById('checking-indicator').style.display = 'none';
+    activeCount = 0;
+    blockedCount = 0;
+    totalCount = 0;
+    clearInterval(timerInterval);
 }
 </script>
 </body>
