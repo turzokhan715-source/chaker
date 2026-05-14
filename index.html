@@ -1,16 +1,129 @@
-// এই মেথডটি একদম আপনার ম্যানুয়াল চেকিংয়ের মতো কাজ করবে
-async function checkStatus(uid) {
-    const checkUrl = `https://mbasic.facebook.com/profile.php?id=${uid}`;
-    
-    // মনে রাখবেন, এটি ব্রাউজার থেকে সরাসরি করলে CORS এরর দিতে পারে। 
-    // আপনি আপনার পাইথন স্ক্রিপ্টে (যা আপনি Facebook ফলোর জন্য ব্যবহার করছেন) নিচের লজিকটি যোগ করুন:
-    
-    /* 
-    Python Logic:
-    response = requests.get(f"https://mbasic.facebook.com/profile.php?id={uid}")
-    if "Log in to Facebook" in response.text or "Content not found" in response.text:
-        return "DIE"
-    else:
-        return "LIVE"
-    */
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FB LIVE CHECKER - COMPLETE</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #0a0a0a; color: #fff; display: flex; height: 100vh; overflow: hidden; }
+
+        /* Left Panel */
+        .left-panel { width: 300px; background: #1a1a1a; padding: 15px; display: flex; flex-direction: column; border-right: 1px solid #333; }
+        .panel-header { background: #2a2a2a; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; text-align: center; color: #00ff00; }
+        
+        .uid-input { flex: 1; background: #0f0f0f; border: 1px solid #333; border-radius: 5px; padding: 10px; color: #00ff00; font-family: 'Courier New', monospace; font-size: 12px; resize: none; outline: none; margin-bottom: 10px; }
+        
+        .btn-group { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-check { background: #0066cc; color: white; }
+        .btn-check:hover { background: #0088ff; }
+        .btn-clear { background: #333; color: white; }
+
+        /* Middle Panel (Results) */
+        .middle-panel { flex: 1; background: #0a0a0a; padding: 15px; display: flex; flex-direction: column; }
+        .status-bar { background: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 13px; color: #aaa; }
+        
+        .result-container { flex: 1; background: #0f0f0f; border: 1px solid #333; border-radius: 5px; padding: 10px; overflow-y: auto; }
+        .result-item { padding: 6px 12px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; font-family: 'Courier New', monospace; }
+        .active { background: rgba(0, 255, 0, 0.1); color: #00ff00; border-left: 3px solid #00ff00; }
+        .blocked { background: rgba(255, 0, 0, 0.1); color: #ff0000; border-left: 3px solid #ff0000; }
+
+        /* Progress Footer */
+        .footer { background: #1a1a1a; padding: 15px; margin-top: 10px; border-radius: 5px; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: #00ff00; transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="left-panel">
+    <div class="panel-header">UID CHECKER</div>
+    <textarea id="uidInput" class="uid-input" placeholder="Paste UIDs here (one per line)..."></textarea>
+    <div class="btn-group">
+        <button class="btn btn-clear" onclick="clearInput()">Clear</button>
+        <button class="btn btn-check" onclick="startCheck()">Start Check</button>
+    </div>
+</div>
+
+<div class="middle-panel">
+    <div class="status-bar">
+        <span>Progress: <span id="percent">0%</span></span>
+        <span>Active: <span id="activeCount" style="color:#00ff00">0</span> | Blocked: <span id="blockedCount" style="color:#ff0000">0</span></span>
+    </div>
+    <div id="resultBox" class="result-container">
+        <div style="color: #555; text-align: center; margin-top: 20px;">Results will appear here...</div>
+    </div>
+    <div class="footer">
+        <div class="progress-bar"><div id="fill" class="progress-fill"></div></div>
+        <button onclick="exportActive()" style="padding: 5px 10px; cursor:pointer">Export Active</button>
+    </div>
+</div>
+
+<script>
+    let activeUIDs = [];
+
+    function clearInput() {
+        document.getElementById('uidInput').value = '';
+        location.reload(); 
+    }
+
+    async function startCheck() {
+        const input = document.getElementById('uidInput').value.trim();
+        if (!input) return alert("Please paste UIDs!");
+
+        const uids = input.split('\n').map(u => u.trim()).filter(u => u);
+        const resultBox = document.getElementById('resultBox');
+        resultBox.innerHTML = '';
+        activeUIDs = [];
+        
+        let active = 0, blocked = 0;
+
+        for (let i = 0; i < uids.length; i++) {
+            const uid = uids[i];
+            const status = await checkStatus(uid);
+            
+            const div = document.createElement('div');
+            div.className = `result-item ${status ? 'active' : 'blocked'}`;
+            div.innerHTML = `<span>${i+1}. ${uid}</span> <span>${status ? 'LIVE ✅' : 'DEAD ❌'}</span>`;
+            resultBox.appendChild(div);
+            resultBox.scrollTop = resultBox.scrollHeight;
+
+            if (status) {
+                active++;
+                activeUIDs.push(uid);
+            } else {
+                blocked++;
+            }
+
+            // Update Stats
+            let prg = ((i + 1) / uids.length) * 100;
+            document.getElementById('fill').style.width = prg + '%';
+            document.getElementById('percent').innerText = Math.round(prg) + '%';
+            document.getElementById('activeCount').innerText = active;
+            document.getElementById('blockedCount').innerText = blocked;
+        }
+    }
+
+    async function checkStatus(uid) {
+        // এই Method টি Browser-এ Facebook লগইন থাকলে সবচেয়ে ভালো কাজ করে
+        try {
+            const response = await fetch(`https://graph.facebook.com/${uid}/picture?type=normal`);
+            return response.ok && response.url.includes('100x100');
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function exportActive() {
+        if (activeUIDs.length === 0) return alert("No active UIDs found!");
+        const blob = new Blob([activeUIDs.join('\n')], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'active_uids.txt';
+        a.click();
+    }
+</script>
+
+</body>
+</html>
