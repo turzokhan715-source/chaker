@@ -3,192 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Longisir VIP - Full Mail Access</title>
+    <title>Longisir VIP - Outlook Reader</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: #05060f; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         
-        body { 
-            background: #05060f; 
-            color: #fff; 
-            min-height: 100vh; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 20px;
-        }
-
         .mail-card {
-            background: #ffffff;
-            color: #1e293b;
-            width: 100%;
-            max-width: 550px;
-            padding: 40px;
-            border-radius: 35px;
-            box-shadow: 0 30px 70px rgba(79, 70, 229, 0.4);
+            background: #ffffff; color: #1e293b; width: 100%; max-width: 500px;
+            padding: 40px; border-radius: 30px; box-shadow: 0 20px 60px rgba(79, 70, 229, 0.4);
             text-align: center;
         }
 
-        h1 { font-size: 28px; font-weight: 800; color: #0f111a; margin-bottom: 5px; }
-        p.sub-title { font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 2px; margin-bottom: 30px; }
-
         .input-box {
-            width: 100%;
-            padding: 20px;
-            border-radius: 20px;
-            border: 2px solid #e2e8f0;
-            background: #f8fafc;
-            font-size: 14px;
-            outline: none;
-            margin-bottom: 20px;
-            transition: 0.3s;
-            resize: none;
-            font-weight: 600;
+            width: 100%; padding: 18px; border-radius: 15px; border: 2px solid #e2e8f0;
+            background: #f8fafc; font-size: 14px; margin-bottom: 20px; outline: none;
+            resize: none; font-weight: 600;
         }
 
-        .input-box:focus { border-color: #4f46e5; background: #fff; }
-
         .fetch-btn {
-            width: 100%;
-            padding: 20px;
-            border-radius: 20px;
-            border: none;
-            background: #4f46e5;
-            color: #fff;
-            font-weight: 800;
-            font-size: 16px;
-            cursor: pointer;
-            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
-            transition: 0.3s;
+            width: 100%; padding: 18px; border-radius: 15px; border: none;
+            background: #4f46e5; color: #fff; font-weight: 800; cursor: pointer;
+            transition: 0.3s; font-size: 16px;
         }
 
         .fetch-btn:hover { background: #4338ca; transform: translateY(-2px); }
-        .fetch-btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
         .result-area {
-            margin-top: 30px;
-            background: #0f111a;
-            border-radius: 25px;
-            min-height: 180px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #1e293b;
-            padding: 20px;
+            margin-top: 25px; background: #0f111a; border-radius: 20px;
+            min-height: 150px; display: flex; align-items: center; justify-content: center;
+            border: 1px solid #1e293b; padding: 15px;
         }
 
-        .loader {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-left-color: #4f46e5;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            animation: spin 1s linear infinite;
-        }
-
+        .code-text { font-size: 60px; color: #22c55e; letter-spacing: 5px; font-weight: 800; }
+        .loader { border: 4px solid #1e293b; border-left-color: #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        .code-display { text-align: center; animation: fadeIn 0.5s ease-out; }
-        .code-display span { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
-        .code-display h2 { font-size: 70px; color: #22c55e; letter-spacing: 5px; line-height: 1.2; margin: 5px 0; }
-        .code-display p { font-size: 13px; color: #e2e8f0; opacity: 0.8; }
-
-        .error-msg { color: #ef4444; font-weight: 600; font-size: 14px; text-align: center; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
     <div class="mail-card">
-        <h1>Full Access Mail Reader</h1>
-        <p class="sub-title">PREMIUM VERIFICATION PORTAL</p>
+        <h2 style="margin-bottom: 5px;">Mail API Reader</h2>
+        <p style="font-size: 10px; color: #94a3b8; font-weight: 800; margin-bottom: 25px;">PREMIUM ACCESS</p>
 
-        <textarea id="mail-input" class="input-box" rows="4" placeholder="Paste Data: Email|Pass|Token..."></textarea>
+        <textarea id="full-data" class="input-box" rows="4" placeholder="Paste: Email|Pass|Token..."></textarea>
 
-        <button id="action-btn" class="fetch-btn" onclick="fetchFacebookCode()">GET VERIFICATION CODE</button>
+        <button class="fetch-btn" id="btn" onclick="fetchCode()">GET VERIFICATION CODE</button>
 
-        <div class="result-area" id="result-container">
-            <div id="init-text" style="color: #64748b; font-size: 14px;">Waiting for your input...</div>
-            
-            <div id="loading-spinner" style="display: none;">
-                <div class="loader"></div>
-                <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">Connecting to Mail Server...</p>
+        <div class="result-area" id="res-box">
+            <div id="init" style="color: #64748b;">অপেক্ষা করা হচ্ছে...</div>
+            <div id="loading" style="display:none;"><div class="loader"></div></div>
+            <div id="success" style="display:none; text-align: center;">
+                <span style="font-size: 11px; color: #94a3b8; font-weight: 800;">FACEBOOK CODE</span>
+                <div id="code" class="code-text">000000</div>
             </div>
-
-            <div id="success-view" class="code-display" style="display: none;">
-                <span>Verification Code Found</span>
-                <h2 id="final-code">------</h2>
-                <p id="final-subject">Subject: No Data Fetched</p>
-            </div>
-
-            <div id="error-view" class="error-msg" style="display: none;">
-                লগইন ব্যর্থ! মেইল, পাসওয়ার্ড অথবা এপিআই চেক করুন।
-            </div>
+            <div id="error" style="display:none; color: #ef4444;">লগইন ব্যর্থ বা ডাটা ভুল!</div>
         </div>
     </div>
 
 <script>
-    async function fetchFacebookCode() {
-        const inputData = document.getElementById('mail-input').value.trim();
-        const btn = document.getElementById('action-btn');
-        
-        // UI Elements
-        const init = document.getElementById('init-text');
-        const loader = document.getElementById('loading-spinner');
-        const success = document.getElementById('success-view');
-        const error = document.getElementById('error-view');
-        const codeDisplay = document.getElementById('final-code');
-        const subjectDisplay = document.getElementById('final-subject');
+    async function fetchCode() {
+        const raw = document.getElementById('full-data').value.trim();
+        const btn = document.getElementById('btn');
+        const box = {
+            init: document.getElementById('init'),
+            loading: document.getElementById('loading'),
+            success: document.getElementById('success'),
+            error: document.getElementById('error')
+        };
 
-        if(!inputData) {
-            alert("দয়া করে মেইল ডাটা ইনপুট দিন!");
-            return;
-        }
+        if(!raw) return alert("Data Input Karun!");
 
-        // UI Reset to Loading State
-        init.style.display = 'none';
-        success.style.display = 'none';
-        error.style.display = 'none';
-        loader.style.display = 'block';
+        // UI Reset
+        Object.values(box).forEach(el => el.style.display = 'none');
+        box.loading.style.display = 'block';
         btn.disabled = true;
-        btn.innerText = "ACCESSING INBOX...";
 
         try {
-            // ডাটা থেকে ইমেইল এবং পাসওয়ার্ড আলাদা করা
-            const parts = inputData.split('|');
-            const email = parts[0].trim();
-            const password = parts[1].trim();
-
-            /* মনোযোগ দিন: 
-               আপনার হোস্টিংয়ে রাখা PHP ফাইলের লিঙ্কটি নিচের ফ্যাকাশ ব্যাকটিকের ভেতর বসান।
-               উদাহরণ: https://your-site.com/api.php?email=${email}&pass=${password}
-            */
-            const apiUrl = `https://your-domain.com/read_api.php?email=${email}&pass=${password}`;
+            const [email, pass] = raw.split('|');
             
-            // এপিআই কল করা হচ্ছে
-            const response = await fetch(apiUrl);
-            const data = await response.json();
+            /* বিঃদ্রঃ: সরাসরি ব্রাউজার থেকে আউটলুক ডাটা ব্লক করে। 
+               আমি এখানে একটি ডাইনামিক ফিল্টার ব্যবহার করছি যা আপনার ইনপুট থেকে 
+               মেইল রিড করার জন্য রিকোয়েস্ট পাঠাবে।
+            */
+            
+            // আমরা একটি ফ্লেক্সিবল এপিআই ব্যবহার করছি যা আপনার ওই হটমেইল সাইটের মতোই কাজ করবে
+            const proxyUrl = "https://api.allorigins.win/get?url=";
+            const targetUrl = encodeURIComponent(`https://www.hotmail143.com/gmail-codes.php?email=${email}&pass=${pass}`);
 
-            if (data.status === "success") {
-                // সাকসেস হলে কোড এবং সাবজেক্ট দেখানো
-                codeDisplay.innerText = data.code;
-                subjectDisplay.innerText = "Subject: " + data.subject;
-                
-                loader.style.display = 'none';
-                success.style.display = 'block';
+            const response = await fetch(proxyUrl + targetUrl);
+            const rawJson = await response.json();
+            
+            // ডাটা ক্লিন করা (যেহেতু প্রক্সি থেকে আসছে)
+            const result = JSON.parse(rawJson.contents);
+
+            if(result.successful || result.code) {
+                document.getElementById('code').innerText = result.code;
+                box.loading.style.display = 'none';
+                box.success.style.display = 'block';
             } else {
-                throw new Error("Invalid Response");
+                throw new Error();
             }
 
         } catch (err) {
-            // এরর হ্যান্ডলিং
-            loader.style.display = 'none';
-            error.style.display = 'block';
+            box.loading.style.display = 'none';
+            box.error.style.display = 'block';
         } finally {
             btn.disabled = false;
-            btn.innerText = "GET VERIFICATION CODE";
         }
     }
 </script>
