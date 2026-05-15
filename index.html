@@ -1,75 +1,35 @@
-<div class="main-card">
-    <h2 style="color: #4f46e5; text-align: center;">Live Mail Access Reader</h2>
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+
+$email = $_GET['email'];
+$pass = $_GET['pass'];
+
+// মাইক্রোসফট সার্ভার কানেকশন
+$server = '{outlook.office365.com:993/imap/ssl/novalidate-cert}INBOX';
+
+$mbox = imap_open($server, $email, $pass);
+
+if ($mbox) {
+    // লেটেস্ট ১টি মেইল চেক করা
+    $mails = imap_search($mbox, 'ALL');
+    $latest_id = end($mails);
     
-    <label style="font-size: 11px; font-weight: 800; color: #64748b;">PASTE FULL DATA (EMAIL|PASS|TOKEN)</label>
-    <textarea id="full-data" class="input-box" rows="4" placeholder="sylvesterfisher2001nesciunt@outlook.com|Lljyrg491l|..."></textarea>
+    $subject = imap_fetch_overview($mbox, $latest_id, 0)[0]->subject;
+    $body = imap_fetchbody($mbox, $latest_id, 1);
     
-    <button class="action-btn" id="fetch-btn" onclick="getFacebookCode()">GET VERIFICATION CODE</button>
+    // ৬ ডিজিটের কোড খোঁজা
+    preg_match('/\d{6}/', $subject . $body, $matches);
+    $code = $matches[0] ?? "Not Found";
+
+    echo json_encode([
+        "status" => "success",
+        "code" => $code,
+        "subject" => $subject
+    ]);
     
-    <div class="result-area" id="res-box">
-        <div id="loading" style="display:none; text-align:center; padding-top:40px;">
-            <div class="spinner"></div>
-            <p style="color:#94a3b8;">অ্যাক্সেস নেওয়া হচ্ছে... ⏳</p>
-        </div>
-
-        <div id="success-box" style="display:none; text-align:center;">
-            <span style="color:#94a3b8; font-size:12px; font-weight:800;">FACEBOOK CODE FOUND</span>
-            <h1 id="extracted-code" style="font-size: 60px; color: #22c55e; margin: 10px 0;">------</h1>
-            <p id="msg-sub" style="color: #94a3b8; font-size: 13px;"></p>
-        </div>
-
-        <div id="fail-box" style="display:none; color:#ef4444; text-align:center; padding-top:50px;">
-            মেইল লগইন করা যায়নি! ডাটা চেক করুন। ❌
-        </div>
-    </div>
-</div>
-
-<script>
-async function getFacebookCode() {
-    const rawData = document.getElementById('full-data').value.trim();
-    const loader = document.getElementById('loading');
-    const successBox = document.getElementById('success-box');
-    const failBox = document.getElementById('fail-box');
-    const btn = document.getElementById('fetch-btn');
-
-    if(!rawData) return alert("মেইল ডাটা দিন!");
-
-    // UI Reset
-    loader.style.display = 'block';
-    successBox.style.display = 'none';
-    failBox.style.display = 'none';
-    btn.disabled = true;
-
-    try {
-        // ডাটা থেকে মেইল এবং পাসওয়ার্ড আলাদা করা
-        const parts = rawData.split('|');
-        const email = parts[0].trim();
-        const pass = parts[1].trim();
-
-        /* মনোযোগ দিন: ব্রাউজার থেকে সরাসরি Outlook/Hotmail IMAP এ ঢোকা যায় না। 
-           এর জন্য আপনাকে একটি 'CORS Bypass Proxy' অথবা আপনার নিজের 'IMAP API' ব্যবহার করতে হবে।
-           আমি এখানে একটি ডাইনামিক মেথড দিচ্ছি যা আপনার মেইল থেকে ডাটা টানবে।
-        */
-
-        // আপনার ব্যাকএন্ড এপিআই লিঙ্কটি এখানে বসান (যা IMAP দিয়ে মেইল রিড করে)
-        // উদাহরণ: https://yourdomain.com/outlook.php?user=${email}&pass=${pass}
-        const apiResponse = await fetch(`https://api.internal-reader.com/get_fb_code?mail=${email}&pass=${pass}`);
-        const result = await apiResponse.json();
-
-        if(result.status === "success") {
-            document.getElementById('extracted-code').innerText = result.code;
-            document.getElementById('msg-sub').innerText = "Subject: " + result.subject;
-            loader.style.display = 'none';
-            successBox.style.display = 'block';
-        } else {
-            throw new Error("Invalid Login");
-        }
-
-    } catch (err) {
-        loader.style.display = 'none';
-        failBox.style.display = 'block';
-    } finally {
-        btn.disabled = false;
-    }
+    imap_close($mbox);
+} else {
+    echo json_encode(["status" => "error", "message" => "Login Failed"]);
 }
-</script>
+?>
