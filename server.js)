@@ -1,0 +1,132 @@
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+// Microsoft Graph API endpoint
+const GRAPH_API = 'https://graph.microsoft.com/v1.0';
+
+// Platform email mappings
+const PLATFORM_EMAILS = {
+    facebook: 'security@facebookmail.com',
+    instagram: 'security@mail.instagram.com'
+};
+
+// Extract OTP from email body
+function extractOTP(emailBody) {
+    const patterns = [
+        /\b(\d{6})\b/,                          // 6-digit code
+        /\b(\d{8})\b/,                          // 8-digit code
+        /code[:\s]+(\d{6,8})/i,                 // "code: 123456"
+        /verification code[:\s]+(\d{6,8})/i,    // "verification code: 123456"
+        /(\d{6,8})\s+is your/i,                 // "123456 is your code"
+        /your code is[:\s]+(\d{6,8})/i,         // "your code is: 123456"
+        /login code[:\s]+(\d{6,8})/i            // "login code: 123456"
+    ];
+
+    for (const pattern of patterns) {
+        const match = emailBody.match(pattern);
+        if (match && match[1]) {
+            const code = match[1];
+            // Validate it's a reasonable OTP length
+            if (code.length >= 6 && code.length <= 8) {
+                return code;
+            }
+        }
+    }
+    return null;
+}
+
+// Main API endpoint
+app.post('/api/extract-otp', async (req, res) => {
+    try {
+        const { email, password, token, uuid, platform } = req.body;
+
+        if (!email) {
+            return res.json({ success: false, error: 'Email is required' });
+        }
+
+        if (!token) {
+            return res.json({ 
+                success: false, 
+                error: 'Access token is required. Please provide the token from Microsoft Graph.' 
+            });
+        }
+
+        const platformEmail = PLATFORM_EMAILS[platform] || PLATFORM_EMAILS.facebook;
+
+        // Fetch recent emails from Microsoft Graph
+        const graphUrl = `${GRAPH_API}/me/messages?$top=10&$orderby=receivedDateTime desc&$filter=from/emailAddress/address eq '${platformEmail}'&$select=subject,body,from,receivedDateTime`;
+
+        console.log(`[${new Date().toISOString()}] Fetching emails for ${email} from ${platformEmail}`);
+
+        const response = await axios.get(graphUrl, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const messages = response.data.value;
+
+        if (!messages || messages.length === 0) {
+            return res.json({ 
+                success: false, 
+                error: `No verification emails found from ${platform}` 
+            });
+        }
+
+        // Extract OTP from most recent email
+        for (const message of messages) {
+            const body = message.body.content;
+            const otp = extractOTP(body);
+
+            if (otp) {
+                console.log(`[${new Date().toISOString()}] OTP found: ${otp}`);
+                
+                return res.json({
+                    success: true,
+                    otp: otp,
+                    from: message.from.emailAddress.address,
+                    subject: message.subject,
+                    receivedAt: message.receivedDateTime
+                });
+            }
+        }
+
+        res.json({ 
+            success: false, 
+            error: 'No verification code found in recent emails' 
+        });
+
+    } catch (error) {
+        console.error('[ERROR]', error.response?.data || error.message);
+        
+        if (error.response?.status === 401) {
+            return res.json({ 
+                success: false, 
+                error: 'Invalid or expired access token. Please get a new token.' 
+            });
+        }
+
+        res.json({ 
+            success: false, 
+            error: error.message || 'Failed to fetch emails' 
+        });
+    }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📡 API endpoint: http://localhost:${PORT}/api/extract-otp`);
+});
