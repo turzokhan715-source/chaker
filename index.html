@@ -19,10 +19,10 @@
         }
         .container {
             background: white;
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
         }
         .header {
@@ -32,26 +32,28 @@
         .header h1 {
             color: 
 ;
-            font-size: 28px;
+            font-size: 32px;
             margin-bottom: 8px;
+            font-weight: 700;
         }
         .header p {
             color: #666;
-            font-size: 14px;
+            font-size: 15px;
         }
         .tabs {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             border-bottom: 2px solid 
 ;
         }
         .tab {
-            padding: 12px 24px;
+            flex: 1;
+            padding: 14px;
             background: none;
             border: none;
             color: #666;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             border-bottom: 3px solid transparent;
@@ -63,27 +65,28 @@
             border-bottom-color: 
 ;
         }
-        .input-group {
-            margin-bottom: 20px;
+        .input-section {
+            margin-bottom: 25px;
         }
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             color: #333;
             font-weight: 600;
             font-size: 14px;
         }
         textarea {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             border: 2px solid 
 ;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 13px;
             font-family: 'Courier New', monospace;
             resize: vertical;
-            min-height: 100px;
+            min-height: 120px;
             transition: border 0.3s;
+            line-height: 1.6;
         }
         textarea:focus {
             outline: none;
@@ -93,46 +96,52 @@
         .format-hint {
             font-size: 12px;
             color: #999;
-            margin-top: 5px;
+            margin-top: 6px;
         }
         .parsed-info {
-            background: 
-;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 15px;
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 20px;
             font-size: 12px;
             color: #555;
             display: none;
-            line-height: 1.8;
+            line-height: 1.9;
+            border-left: 4px solid 
+;
         }
         .parsed-info.show {
             display: block;
         }
-        button {
+        .extract-btn {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             background: linear-gradient(135deg, 
  0%, 
  100%);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.2s, opacity 0.3s;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
+        .extract-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
-        button:disabled {
+        .extract-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
         .loading {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 25px;
             display: none;
         }
         .loading.show {
@@ -140,88 +149,117 @@
         }
         .spinner {
             display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(0, 120, 212, 0.2);
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(102, 126, 234, 0.2);
             border-radius: 50%;
             border-top-color: 
 ;
             animation: spin 1s ease-in-out infinite;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        .result {
-            margin-top: 20px;
-            padding: 20px;
-            background: 
+        .loading-text {
+            color: 
 ;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .result {
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
             border: 2px solid 
 ;
-            border-radius: 8px;
+            border-radius: 12px;
             display: none;
         }
         .result.show {
             display: block;
+            animation: slideIn 0.4s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .result h3 {
             color: 
 ;
-            margin-bottom: 15px;
-            font-size: 16px;
+            margin-bottom: 18px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .otp-display {
             display: flex;
             align-items: center;
             justify-content: space-between;
             background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         .otp-code {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: bold;
             color: 
 ;
-            letter-spacing: 6px;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
         }
         .copy-btn {
-            padding: 8px 16px;
+            padding: 10px 20px;
             background: 
 ;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s;
         }
         .copy-btn:hover {
             background: 
 ;
+            transform: scale(1.05);
         }
         .copy-btn.copied {
             background: 
 ;
         }
-        .email-info {
-            font-size: 13px;
+        .otp-meta {
+            font-size: 12px;
             color: #666;
-            margin-top: 10px;
+            margin-top: 8px;
+            line-height: 1.6;
         }
         .error {
             color: 
 ;
-            background: 
-;
-            padding: 15px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            padding: 18px;
+            border-radius: 10px;
             margin-top: 20px;
             display: none;
             border-left: 4px solid 
 ;
+            font-size: 14px;
+            line-height: 1.6;
         }
         .error.show {
             display: block;
@@ -232,54 +270,63 @@
     <div class="container">
         <div class="header">
             <h1>🔐 Outlook OTP Extractor</h1>
-            <p>Extract Facebook/Instagram verification codes from Outlook</p>
+            <p>Extract Facebook/Instagram verification codes instantly</p>
         </div>
 
         <div class="tabs">
-            <button class="tab active" data-tab="gmail">📧 Gmail</button>
-            <button class="tab" data-tab="outlook">📬 Hotmail/Outlook</button>
+            <button class="tab active" data-platform="facebook">
+                📘 Facebook
+            </button>
+            <button class="tab" data-platform="instagram">
+                📷 Instagram
+            </button>
         </div>
 
-        <div class="input-group">
-            <label>📋 Paste Credentials:</label>
+        <div class="input-section">
+            <label>📋 Paste Account Credentials:</label>
             <textarea id="credentials" placeholder="email|password|token|uuid"></textarea>
             <div class="format-hint">Format: email|password|token|uuid</div>
         </div>
 
         <div class="parsed-info" id="parsedInfo"></div>
 
-        <button id="extractBtn">Get Verification Code</button>
+        <button class="extract-btn" id="extractBtn">🚀 Get Verification Code</button>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p style="color: 
-; font-weight: 600;">⏳ Fetching verification code...</p>
+            <p class="loading-text">⏳ Fetching verification code from Outlook...</p>
         </div>
 
         <div class="result" id="result">
-            <h3>✅ Email Retrieved Successfully</h3>
-            <div class="email-info" id="emailInfo"></div>
+            <h3>✅ Verification Code Retrieved</h3>
             <div class="otp-display">
                 <div class="otp-code" id="otpCode">------</div>
-                <button class="copy-btn" id="copyBtn">📋 Copy Code</button>
+                <button class="copy-btn" id="copyBtn">📋 Copy</button>
             </div>
+            <div class="otp-meta" id="otpMeta"></div>
         </div>
 
         <div class="error" id="error"></div>
     </div>
 
     <script>
-        const API_BASE = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000' 
-            : 'https://your-backend.onrender.com';
+        // API Configuration
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api/extract-otp'
+            : 'https://your-backend.onrender.com/api/extract-otp';
 
+        let selectedPlatform = 'facebook';
+
+        // Platform tabs
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
+                selectedPlatform = tab.dataset.platform;
             });
         });
 
+        // Auto-parse credentials
         const credInput = document.getElementById('credentials');
         credInput.addEventListener('input', parseCredentials);
         credInput.addEventListener('paste', () => setTimeout(parseCredentials, 100));
@@ -298,7 +345,7 @@
                 info.innerHTML = `
                     <strong>📧 Email:</strong> ${email}<br>
                     <strong>🔑 Password:</strong> ${'•'.repeat(Math.min(password.length, 20))}<br>
-                    ${token ? `<strong>🎫 Token:</strong> ${token.substring(0, 40)}...<br>` : ''}
+                    ${token ? `<strong>🎫 Token:</strong> ${token.substring(0, 50)}...<br>` : ''}
                     ${uuid ? `<strong>🆔 UUID:</strong> ${uuid}` : ''}
                 `;
                 info.classList.add('show');
@@ -307,54 +354,67 @@
             }
         }
 
+        // Extract OTP
         document.getElementById('extractBtn').addEventListener('click', async () => {
             const input = credInput.value.trim();
             const parts = input.split('|');
 
             if (parts.length < 2) {
-                showError('❌ Invalid format! Use: email|password|token|uuid');
+                showError('❌ Invalid format! Please use: email|password|token|uuid');
                 return;
             }
 
-            const email = parts[0];
-            const password = parts[1];
-            const token = parts[2] || '';
+            const [email, password, token, uuid] = parts;
 
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             const error = document.getElementById('error');
             const btn = document.getElementById('extractBtn');
 
+            // Reset UI
             result.classList.remove('show');
             error.classList.remove('show');
             loading.classList.add('show');
             btn.disabled = true;
 
             try {
-                const response = await fetch(`${API_BASE}/api/get-otp`, {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, token })
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        token: token || null,
+                        uuid: uuid || null,
+                        platform: selectedPlatform
+                    })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    document.getElementById('emailInfo').textContent = `For: ${email}`;
                     document.getElementById('otpCode').textContent = data.otp;
+                    document.getElementById('otpMeta').innerHTML = `
+                        <strong>From:</strong> ${data.from}<br>
+                        <strong>Subject:</strong> ${data.subject}<br>
+                        <strong>Received:</strong> ${new Date(data.receivedAt).toLocaleString()}
+                    `;
                     result.classList.add('show');
+
+                    // Auto-copy to clipboard
                     await navigator.clipboard.writeText(data.otp);
                 } else {
-                    showError('❌ ' + (data.error || 'Failed to retrieve OTP'));
+                    showError('❌ ' + (data.error || 'Failed to retrieve verification code'));
                 }
             } catch (err) {
-                showError('❌ Connection failed: ' + err.message);
+                showError('❌ Connection failed: ' + err.message + '\n\nMake sure the backend server is running!');
             } finally {
                 loading.classList.remove('show');
                 btn.disabled = false;
             }
         });
 
+        // Copy button
         document.getElementById('copyBtn').addEventListener('click', async () => {
             const otp = document.getElementById('otpCode').textContent;
             const btn = document.getElementById('copyBtn');
@@ -364,7 +424,7 @@
             btn.classList.add('copied');
             
             setTimeout(() => {
-                btn.textContent = '📋 Copy Code';
+                btn.textContent = '📋 Copy';
                 btn.classList.remove('copied');
             }, 2000);
         });
@@ -377,116 +437,3 @@
     </script>
 </body>
 </html>
-
-2. server.js
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
-require('dotenv').config();
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(cors());
-app.use(express.json());
-
-const GRAPH_API = 'https://graph.microsoft.com/v1.0';
-
-async function getAccessToken(email, password) {
-    try {
-        const response = await axios.post(
-            `https://login.microsoftonline.com/common/oauth2/v2.0/token`,
-            new URLSearchParams({
-                grant_type: 'password',
-                client_id: process.env.CLIENT_ID,
-                client_secret: process.env.CLIENT_SECRET,
-                scope: 'https://graph.microsoft.com/.default',
-                username: email,
-                password: password
-            }),
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-        );
-        return response.data.access_token;
-    } catch (error) {
-        throw new Error('Authentication failed');
-    }
-}
-
-function extractOTP(emailBody) {
-    const patterns = [
-        /\b(\d{6})\b/,
-        /code[:\s]+(\d{6})/i,
-        /verification code[:\s]+(\d{6})/i,
-        /(\d{6})\s+is your/i,
-        /your code is[:\s]+(\d{6})/i
-    ];
-
-    for (const pattern of patterns) {
-        const match = emailBody.match(pattern);
-        if (match) return match[1];
-    }
-    return null;
-}
-
-app.post('/api/get-otp', async (req, res) => {
-    try {
-        const { email, password, token } = req.body;
-
-        if (!email || (!password && !token)) {
-            return res.json({ success: false, error: 'Email and password/token required' });
-        }
-
-        const accessToken = token || await getAccessToken(email, password);
-
-        const response = await axios.get(
-            `${GRAPH_API}/me/messages?$top=10&$orderby=receivedDateTime desc&$filter=from/emailAddress/address eq 'security@facebookmail.com' or from/emailAddress/address eq 'security@mail.instagram.com'`,
-            { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-
-        const messages = response.data.value;
-
-        if (messages.length === 0) {
-            return res.json({ success: false, error: 'No verification emails found' });
-        }
-
-        for (const message of messages) {
-            const body = message.body.content;
-            const otp = extractOTP(body);
-
-            if (otp) {
-                return res.json({
-                    success: true,
-                    otp: otp,
-                    from: message.from.emailAddress.address,
-                    subject: message.subject
-                });
-            }
-        }
-
-        res.json({ success: false, error: 'No OTP code found in recent emails' });
-
-    } catch (error) {
-        console.error('Error:', error.message);
-        res.json({ success: false, error: error.message });
-    }
-});
-
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
-
-3. package.json
-{
-  "name": "outlook-otp-extractor",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "axios": "^1.6.0",
-    "dotenv": "^16.3.1"
-  }
-}
