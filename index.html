@@ -1,191 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Longisir VIP - Premium Tool Suite</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        body { background: #05060f; color: #fff; min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
-        
-        .container { width: 100%; max-width: 900px; }
-        .hidden { display: none !important; }
-
-        /* --- Luxury Navigation --- */
-        .header-nav { 
-            background: rgba(15, 17, 26, 0.8); backdrop-filter: blur(10px);
-            padding: 10px; border-radius: 20px; display: flex; justify-content: space-between; 
-            align-items: center; margin-bottom: 25px; border: 1px solid #1e293b;
-        }
-
-        .back-btn { background: #4f46e5; color: #fff; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 800; }
-
-        .tab-group { display: flex; background: #05060f; padding: 5px; border-radius: 15px; gap: 5px; }
-        .tab-btn { 
-            background: transparent; color: #94a3b8; border: none; padding: 10px 25px; 
-            border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; 
-        }
-        .tab-btn.active { background: #fff; color: #05060f; box-shadow: 0 0 15px #fff; }
-
-        /* --- Main Tool Card --- */
-        .tool-card { 
-            background: #ffffff; color: #1e293b; border-radius: 30px; 
-            padding: 35px; min-height: 550px; box-shadow: 0 25px 60px rgba(79, 70, 229, 0.2);
-            position: relative; overflow: hidden;
-        }
-
-        h2 { font-size: 24px; font-weight: 800; margin-bottom: 20px; color: #0f111a; }
-
-        .input-box { 
-            width: 100%; padding: 18px; border-radius: 18px; border: 2px solid #e2e8f0; 
-            background: #f8fafc; font-size: 15px; outline: none; margin-bottom: 15px; resize: none;
-        }
-        .input-box:focus { border-color: #4f46e5; }
-
-        .action-btn { 
-            width: 100%; padding: 18px; border-radius: 18px; border: none; 
-            background: #1e293b; color: #fff; font-weight: 800; cursor: pointer; 
-            font-size: 16px; margin-bottom: 20px; transition: 0.3s;
-        }
-        .action-btn:hover { background: #4f46e5; transform: translateY(-2px); }
-
-        /* --- Results Area --- */
-        .result-view { 
-            background: #0f111a; border-radius: 20px; padding: 20px; 
-            height: 280px; overflow-y: auto; border: 1px solid #1e293b;
-        }
-        
-        /* Stats Styling */
-        .stats-footer { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;
-        }
-        .stat-box { background: #f1f5f9; padding: 10px 20px; border-radius: 15px; text-align: center; border: 1px solid #e2e8f0; }
-        .stat-box b { display: block; font-size: 20px; line-height: 1; }
-        .stat-box span { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; }
-
-        .code-found { text-align: center; color: #22c55e; animation: fadeIn 0.5s; }
-        .code-found h1 { font-size: 60px; letter-spacing: 5px; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="header-nav">
-        <button class="back-btn" onclick="location.reload()">← Home</button>
-        <div class="tab-group">
-            <button class="tab-btn active" id="t-2fa" onclick="switchTab('2fa')">2FA</button>
-            <button class="tab-btn" id="t-mail" onclick="switchTab('mail')">MAIL</button>
-            <button class="tab-btn" id="t-live" onclick="switchTab('live')">LIVE CHECKER</button>
-        </div>
-    </div>
-
-    <div class="tool-card">
-        <div id="box-2fa">
-            <h2>2FA Authenticator Ready</h2>
-            <input type="text" id="tfa-key" class="input-box" placeholder="Enter 2FA Secret Key">
-            <button class="action-btn" onclick="gen2FA()">GENERATE CODE</button>
-            <div class="result-view" style="display:flex; align-items:center; justify-content:center;">
-                <div id="tfa-res" style="font-size:70px; font-weight:800; color:#4f46e5;">------</div>
-            </div>
+<div class="main-card">
+    <h2 style="color: #4f46e5; text-align: center;">Live Mail Access Reader</h2>
+    
+    <label style="font-size: 11px; font-weight: 800; color: #64748b;">PASTE FULL DATA (EMAIL|PASS|TOKEN)</label>
+    <textarea id="full-data" class="input-box" rows="4" placeholder="sylvesterfisher2001nesciunt@outlook.com|Lljyrg491l|..."></textarea>
+    
+    <button class="action-btn" id="fetch-btn" onclick="getFacebookCode()">GET VERIFICATION CODE</button>
+    
+    <div class="result-area" id="res-box">
+        <div id="loading" style="display:none; text-align:center; padding-top:40px;">
+            <div class="spinner"></div>
+            <p style="color:#94a3b8;">অ্যাক্সেস নেওয়া হচ্ছে... ⏳</p>
         </div>
 
-        <div id="box-mail" class="hidden">
-            <h2>Full Access Mail Reader</h2>
-            <textarea id="mail-data" class="input-box" rows="3" placeholder="Email|Pass|Token..."></textarea>
-            <button class="action-btn" onclick="fetchMailCode()">GET VERIFICATION CODE</button>
-            <div class="result-view" id="mail-res">
-                <div style="text-align:center; color:#64748b; margin-top:100px;">Waiting for input...</div>
-            </div>
+        <div id="success-box" style="display:none; text-align:center;">
+            <span style="color:#94a3b8; font-size:12px; font-weight:800;">FACEBOOK CODE FOUND</span>
+            <h1 id="extracted-code" style="font-size: 60px; color: #22c55e; margin: 10px 0;">------</h1>
+            <p id="msg-sub" style="color: #94a3b8; font-size: 13px;"></p>
         </div>
 
-        <div id="box-live" class="hidden">
-            <h2>Account Live Checker</h2>
-            <textarea id="uids" class="input-box" rows="3" placeholder="UID|PASS|2FA..."></textarea>
-            <button class="action-btn" id="run-btn" onclick="checkLive()">START VALIDATION</button>
-            <div class="result-view" id="live-log" style="font-family:monospace; font-size:13px; color:#22c55e;">System ready...</div>
-            
-            <div class="stats-footer">
-                <div style="display:flex; gap:10px;">
-                    <div class="stat-box" style="color:#22c55e;"><b id="lc">0</b><span>Live</span></div>
-                    <div class="stat-box" style="color:#ef4444;"><b id="dc">0</b><span>Die</span></div>
-                    <div class="stat-box" style="color:#4f46e5;"><b id="tt">0</b><span>Total</span></div>
-                </div>
-                <button style="background:#f1f5f9; border:1px solid #cbd5e1; padding:12px; border-radius:12px; cursor:pointer;" onclick="download()">📥 Save Live</button>
-            </div>
+        <div id="fail-box" style="display:none; color:#ef4444; text-align:center; padding-top:50px;">
+            মেইল লগইন করা যায়নি! ডাটা চেক করুন। ❌
         </div>
     </div>
 </div>
 
 <script>
-    function switchTab(x) {
-        ['2fa', 'mail', 'live'].forEach(id => {
-            document.getElementById('box-'+id).classList.add('hidden');
-            document.getElementById('t-'+id).classList.remove('active');
-        });
-        document.getElementById('box-'+x).classList.remove('hidden');
-        document.getElementById('t-'+x).classList.add('active');
-    }
+async function getFacebookCode() {
+    const rawData = document.getElementById('full-data').value.trim();
+    const loader = document.getElementById('loading');
+    const successBox = document.getElementById('success-box');
+    const failBox = document.getElementById('fail-box');
+    const btn = document.getElementById('fetch-btn');
 
-    // --- 2FA Logic ---
-    function gen2FA() {
-        const code = Math.floor(100000 + Math.random() * 900000);
-        document.getElementById('tfa-res').innerText = code;
-    }
+    if(!rawData) return alert("মেইল ডাটা দিন!");
 
-    // --- Mail Logic ---
-    async function fetchMailCode() {
-        const data = document.getElementById('mail-data').value;
-        const res = document.getElementById('mail-res');
-        if(!data) return;
-        
-        res.innerHTML = '<div style="text-align:center; margin-top:100px; color:#4f46e5;">Connecting to Server...</div>';
-        
-        setTimeout(() => {
-            res.innerHTML = `
-                <div class="code-found">
-                    <span>VERIFICATION CODE FOUND</span>
-                    <h1>090841</h1>
-                    <p style="color:#94a3b8;">Subject: 090841 is your Facebook code</p>
-                </div>`;
-        }, 2000);
-    }
+    // UI Reset
+    loader.style.display = 'block';
+    successBox.style.display = 'none';
+    failBox.style.display = 'none';
+    btn.disabled = true;
 
-    // --- Live Checker Logic ---
-    let liveItems = [];
-    async function checkLive() {
-        const input = document.getElementById('uids').value.trim();
-        if(!input) return;
-        const lines = input.split('\n');
-        const log = document.getElementById('live-log');
-        log.innerHTML = "";
-        let l=0, d=0; liveItems=[];
+    try {
+        // ডাটা থেকে মেইল এবং পাসওয়ার্ড আলাদা করা
+        const parts = rawData.split('|');
+        const email = parts[0].trim();
+        const pass = parts[1].trim();
 
-        for(let i=0; i<lines.length; i++) {
-            const uid = lines[i].split('|')[0];
-            // আপনার সেই ১০০% ওয়ার্কিং ইমেজ মেথড
-            try {
-                const response = await fetch(`https://graph.facebook.com/${uid}/picture?type=normal`);
-                if(response.ok && response.url.includes('100x100')) {
-                    l++; liveItems.push(lines[i]);
-                    log.innerHTML += `<div>[${i+1}] ${uid} -> <span style="color:#22c55e">LIVE ✅</span></div>`;
-                } else {
-                    d++;
-                    log.innerHTML += `<div>[${i+1}] ${uid} -> <span style="color:#ef4444">DIE ❌</span></div>`;
-                }
-            } catch(e) { d++; }
-            
-            document.getElementById('lc').innerText = l;
-            document.getElementById('dc').innerText = d;
-            document.getElementById('tt').innerText = lines.length;
-            log.scrollTop = log.scrollHeight;
+        /* মনোযোগ দিন: ব্রাউজার থেকে সরাসরি Outlook/Hotmail IMAP এ ঢোকা যায় না। 
+           এর জন্য আপনাকে একটি 'CORS Bypass Proxy' অথবা আপনার নিজের 'IMAP API' ব্যবহার করতে হবে।
+           আমি এখানে একটি ডাইনামিক মেথড দিচ্ছি যা আপনার মেইল থেকে ডাটা টানবে।
+        */
+
+        // আপনার ব্যাকএন্ড এপিআই লিঙ্কটি এখানে বসান (যা IMAP দিয়ে মেইল রিড করে)
+        // উদাহরণ: https://yourdomain.com/outlook.php?user=${email}&pass=${pass}
+        const apiResponse = await fetch(`https://api.internal-reader.com/get_fb_code?mail=${email}&pass=${pass}`);
+        const result = await apiResponse.json();
+
+        if(result.status === "success") {
+            document.getElementById('extracted-code').innerText = result.code;
+            document.getElementById('msg-sub').innerText = "Subject: " + result.subject;
+            loader.style.display = 'none';
+            successBox.style.display = 'block';
+        } else {
+            throw new Error("Invalid Login");
         }
+
+    } catch (err) {
+        loader.style.display = 'none';
+        failBox.style.display = 'block';
+    } finally {
+        btn.disabled = false;
     }
+}
 </script>
-</body>
-</html>
