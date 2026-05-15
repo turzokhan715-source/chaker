@@ -1,129 +1,896 @@
+const express = require('express');
+const axios = require('axios');
+const cors = require('cors');
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+const GRAPH_API_BASE = 'https://graph.microsoft.com/v1.0';
+
+// Enhanced OTP extraction with multiple patterns
+function extractOTP(text, platform, mode) {
+    // Remove HTML tags and normalize whitespace
+    const clean = text
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    console.log('🔍 Searching in text:', clean.substring(0, 200));
+
+    // All possible 6-digit code patterns
+    const allPatterns = [
+        // Explicit mentions
+        /(?:code|código|codigo|kode|kod)[\s:]*(\d{6})/i,
+        /(\d{6})[\s]*(?:is your|is the|code|código)/i,
+        
+        // Facebook specific
+        /facebook.*?(\d{6})/i,
+        /(\d{6}).*?facebook/i,
+        /fb.*?(\d{6})/i,
+        
+        // Instagram specific
+        /instagram.*?(\d{6})/i,
+        /(\d{6}).*?instagram/i,
+        
+        // Verification/Confirmation
+        /verification.*?(\d{6})/i,
+        /(\d{6}).*?verification/i,
+        /confirmation.*?(\d{6})/i,
+        /(\d{6}).*?confirmation/i,
+        
+        // Reset/Security
+        /reset.*?(\d{6})/i,
+        /security.*?(\d{6})/i,
+        /(\d{6}).*?reset/i,
+        
+        // Generic 6-digit (relaxed fallback)
+        /\b(\d{6})\b/g
+    ];
+
+    // Try strict patterns first
+    if (mode === 'strict') {
+        const strictPatterns = allPatterns.slice(0, -1); // All except last generic one
+        
+        for (let pattern of strictPatterns) {
+            const match = clean.match(pattern);
+            if (match && match[1]) {
+                console.log('✅ Found code (strict):', match[1]);
+                return match[1];
+            }
+        }
+    }
+
+    // Try all patterns including generic
+    for (let pattern of allPatterns) {
+        const match = clean.match(pattern);
+        if (match && match[1]) {
+            console.log('✅ Found code (relaxed):', match[1]);
+            return match[1];
+        }
+    }
+
+    console.log('❌ No code found');
+    return null;
+}
+
+// Check if email is from Facebook/Instagram
+function isPlatformEmail(fromAddress, platform) {
+    const lower = fromAddress.toLowerCase();
+    
+    if (platform === 'facebook') {
+        return lower.includes('facebook') || 
+               lower.includes('facebookmail') || 
+               lower.includes('fb.com');
+    }
+    
+    if (platform === 'instagram') {
+        return lower.includes('instagram') || 
+               lower.includes('ig.me');
+    }
+    
+    return false;
+}
+
+app.post('/api/get-otp', async (req, res) => {
+    const { token, platform = 'facebook', mode = 'strict' } = req.body;
+
+    console.log('📨 Request:', { platform, mode, tokenLength: token?.length });
+
+    if (!token) {
+        return res.status(400).json({ error: 'Access token required' });
+    }
+
+    try {
+        // Fetch emails from Microsoft Graph API
+        console.log('🔄 Fetching emails from Graph API...');
+        
+        const response = await axios.get(`${GRAPH_API_BASE}/me/messages`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            params: {
+                '$top': 30, // Increased to 30 emails
+                '$orderby': 'receivedDateTime DESC',
+                '$select': 'subject,body,receivedDateTime,from'
+                // Removed filter to get ALL recent emails
+            }
+        });
+
+        const emails = response.data.value;
+        console.log(`📧 Found ${emails.length} emails`);
+
+        if (!emails || emails.length === 0) {
+            return res.status(404).json({ error: 'No emails found in inbox' });
+        }
+
+        // Search through all emails
+        for (let i = 0; i < emails.length; i++) {
+            const email = emails[i];
+            const emailBody = email.body?.content || '';
+            const subject = email.subject || '';
+            const fromAddress = email.from?.emailAddress?.address || '';
+            
+            console.log(`\n📬 Email ${i+1}:`, {
+                from: fromAddress,
+                subject: subject.substring(0, 50),
+                received: email.receivedDateTime
+            });
+
+            // In strict mode, check sender
+            if (mode === 'strict' && !isPlatformEmail(fromAddress, platform)) {
+                console.log('⏭️  Skipping (not from platform)');
+                continue;
+            }
+
+            // Try to extract OTP
+            const fullText = `${subject} ${emailBody}`;
+            const code = extractOTP(fullText, platform, mode);
+            
+            if (code) {
+                console.log('🎉 SUCCESS! Code found:', code);
+                return res.json({
+                    success: true,
+                    code: code,
+                    email: fromAddress,
+                    subject: subject,
+                    receivedAt: email.receivedDateTime
+                });
+            }
+        }
+
+        console.log('❌ No verification code found in any email');
+        return res.status(404).json({ 
+            error: 'No verification code found',
+            hint: 'Try Relaxed Mode or check if verification email was received'
+        });
+
+    } catch (error) {
+        console.error('💥 Error:', error.response?.data || error.message);
+        
+        if (error.response?.status === 401) {
+            return res.status(401).json({ 
+                error: 'Invalid or expired access token',
+                details: 'Please generate a new Microsoft Graph API token'
+            });
+        }
+        
+        return res.status(500).json({ 
+            error: 'Failed to fetch emails',
+            details: error.response?.data?.error?.message || error.message
+        });
+    }
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        message: 'Outlook OTP Extractor API is running'
+    });
+});
+
+// Test endpoint (for debugging)
+app.post('/api/test-extract', (req, res) => {
+    const { text, platform, mode } = req.body;
+    const code = extractOTP(text, platform, mode);
+    res.json({ code, found: !!code });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`\n🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health\n`);
+});
+
+🎨 Fixed Frontend (outlook-otp-extractor.html)
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB LIVE CHECKER - COMPLETE</title>
+    <title>🔐 Outlook OTP Extractor</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0a0a0a; color: #fff; display: flex; height: 100vh; overflow: hidden; }
-
-        /* Left Panel */
-        .left-panel { width: 300px; background: #1a1a1a; padding: 15px; display: flex; flex-direction: column; border-right: 1px solid #333; }
-        .panel-header { background: #2a2a2a; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; text-align: center; color: #00ff00; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        .uid-input { flex: 1; background: #0f0f0f; border: 1px solid #333; border-radius: 5px; padding: 10px; color: #00ff00; font-family: 'Courier New', monospace; font-size: 12px; resize: none; outline: none; margin-bottom: 10px; }
-        
-        .btn-group { display: flex; gap: 10px; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-check { background: #0066cc; color: white; }
-        .btn-check:hover { background: #0088ff; }
-        .btn-clear { background: #333; color: white; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        /* Middle Panel (Results) */
-        .middle-panel { flex: 1; background: #0a0a0a; padding: 15px; display: flex; flex-direction: column; }
-        .status-bar { background: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 13px; color: #aaa; }
-        
-        .result-container { flex: 1; background: #0f0f0f; border: 1px solid #333; border-radius: 5px; padding: 10px; overflow-y: auto; }
-        .result-item { padding: 6px 12px; margin-bottom: 5px; border-radius: 4px; display: flex; justify-content: space-between; font-family: 'Courier New', monospace; }
-        .active { background: rgba(0, 255, 0, 0.1); color: #00ff00; border-left: 3px solid #00ff00; }
-        .blocked { background: rgba(255, 0, 0, 0.1); color: #ff0000; border-left: 3px solid #ff0000; }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.35);
+            max-width: 850px;
+            width: 100%;
+            padding: 45px;
+        }
 
-        /* Progress Footer */
-        .footer { background: #1a1a1a; padding: 15px; margin-top: 10px; border-radius: 5px; display: flex; align-items: center; gap: 15px; }
-        .progress-bar { flex: 1; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; width: 0%; background: #00ff00; transition: 0.3s; }
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-right: 8px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-indicator.online {
+            background: 
+;
+        }
+
+        .status-indicator.offline {
+            background: 
+;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid 
+;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            border-color: 
+;
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            border: 2px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            color: 
+;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 6px;
+            color: 
+;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid 
+;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            color: 
+;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid 
+;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            min-height: 110px;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: 
+;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid 
+;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            border-color: 
+;
+        }
+
+        .mode-btn.active {
+            background: 
+;
+            color: white;
+            border-color: 
+;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, 
+ 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: 
+;
+            font-weight: 600;
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            border-radius: 10px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fee 0%, 
+ 100%);
+            border: 2px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .result-box {
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            border-radius: 12px;
+            border: 2px solid #86efac;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .result-title {
+            font-weight: 700;
+            color: 
+;
+            font-size: 16px;
+        }
+
+        .copy-btn {
+            padding: 10px 20px;
+            background: 
+;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: 
+;
+            transform: scale(1.05);
+        }
+
+        .copy-btn.copied {
+            background: 
+;
+        }
+
+        .code-display {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 38px;
+            font-weight: 900;
+            text-align: center;
+            color: 
+;
+            letter-spacing: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .email-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .email-info strong {
+            color: #333;
+        }
+
+        .history {
+            margin-top: 35px;
+        }
+
+        .history-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 18px;
+            font-size: 18px;
+        }
+
+        .history-item {
+            background: linear-gradient(135deg, 
+ 0%, 
+ 100%);
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .history-email {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            flex: 1;
+        }
+
+        .history-code {
+            font-weight: 900;
+            color: 
+;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            margin-left: 15px;
+        }
+
+        .debug-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: 
+;
+            border-radius: 10px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            color: #666;
+            max-height: 200px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Outlook OTP Extractor</h1>
+            <p class="subtitle">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">Checking connection...</span>
+            </p>
+        </div>
 
-<div class="left-panel">
-    <div class="panel-header">UID CHECKER</div>
-    <textarea id="uidInput" class="uid-input" placeholder="Paste UIDs here (one per line)..."></textarea>
-    <div class="btn-group">
-        <button class="btn btn-clear" onclick="clearInput()">Clear</button>
-        <button class="btn btn-check" onclick="startCheck()">Start Check</button>
+        <div class="tabs">
+            <div class="tab active" data-platform="facebook">📘 Facebook</div>
+            <div class="tab" data-platform="instagram">📷 Instagram</div>
+        </div>
+
+        <div class="info-box">
+            <strong>📋 Input Format:</strong>
+            email|password|token|uuid<br>
+            <strong>💡 Pro Tip:</strong> Paste your credentials and the code will be extracted automatically!
+        </div>
+
+        <div class="warning-box" style="display: none;" id="warningBox">
+            ⚠️ <strong>Token Issue:</strong> Make sure your Microsoft Graph API token is valid and has Mail.Read permission.
+        </div>
+
+        <div class="input-group">
+            <label>🔑 Account Details</label>
+            <textarea id="accountInput" placeholder="example@outlook.com|password123|M.C532_BAY.token_here|uuid-here"></textarea>
+        </div>
+
+        <div class="mode-toggle">
+            <button class="mode-btn active" data-mode="strict">🎯 Strict Mode</button>
+            <button class="mode-btn" data-mode="relaxed">🔄 Relaxed Mode</button>
+        </div>
+
+        <button class="btn" id="extractBtn">🚀 Get Verification Code</button>
+
+        <div id="loadingBox"></div>
+        <div id="errorBox"></div>
+
+        <div class="result-box" id="resultBox">
+            <div class="result-header">
+                <span class="result-title">✅ Code Extracted Successfully</span>
+                <button class="copy-btn" id="copyBtn">📋 Copy Code</button>
+            </div>
+            <div class="code-display" id="codeDisplay">------</div>
+            <div class="email-info" id="emailInfo"></div>
+        </div>
+
+        <div class="history" id="historySection" style="display: none;">
+            <div class="history-title">📜 History</div>
+            <div id="historyList"></div>
+        </div>
+
+        <div class="debug-section" id="debugSection" style="display: none;"></div>
     </div>
-</div>
 
-<div class="middle-panel">
-    <div class="status-bar">
-        <span>Progress: <span id="percent">0%</span></span>
-        <span>Active: <span id="activeCount" style="color:#00ff00">0</span> | Blocked: <span id="blockedCount" style="color:#ff0000">0</span></span>
-    </div>
-    <div id="resultBox" class="result-container">
-        <div style="color: #555; text-align: center; margin-top: 20px;">Results will appear here...</div>
-    </div>
-    <div class="footer">
-        <div class="progress-bar"><div id="fill" class="progress-fill"></div></div>
-        <button onclick="exportActive()" style="padding: 5px 10px; cursor:pointer">Export Active</button>
-    </div>
-</div>
+    <script>
+        // ⚙️ Configuration
+        const API_URL = 'http://localhost:3000/api/get-otp';
+        const HEALTH_URL = 'http://localhost:3000/health';
 
-<script>
-    let activeUIDs = [];
+        let currentPlatform = 'facebook';
+        let currentMode = 'strict';
+        let history = [];
 
-    function clearInput() {
-        document.getElementById('uidInput').value = '';
-        location.reload(); 
-    }
-
-    async function startCheck() {
-        const input = document.getElementById('uidInput').value.trim();
-        if (!input) return alert("Please paste UIDs!");
-
-        const uids = input.split('\n').map(u => u.trim()).filter(u => u);
-        const resultBox = document.getElementById('resultBox');
-        resultBox.innerHTML = '';
-        activeUIDs = [];
-        
-        let active = 0, blocked = 0;
-
-        for (let i = 0; i < uids.length; i++) {
-            const uid = uids[i];
-            const status = await checkStatus(uid);
+        // Check server status on load
+        async function checkServerStatus() {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
             
-            const div = document.createElement('div');
-            div.className = `result-item ${status ? 'active' : 'blocked'}`;
-            div.innerHTML = `<span>${i+1}. ${uid}</span> <span>${status ? 'LIVE ✅' : 'DEAD ❌'}</span>`;
-            resultBox.appendChild(div);
-            resultBox.scrollTop = resultBox.scrollHeight;
-
-            if (status) {
-                active++;
-                activeUIDs.push(uid);
-            } else {
-                blocked++;
+            try {
+                const response = await fetch(HEALTH_URL);
+                if (response.ok) {
+                    indicator.classList.add('online');
+                    statusText.textContent = 'Server connected ✓';
+                } else {
+                    throw new Error('Server not responding');
+                }
+            } catch (error) {
+                indicator.classList.add('offline');
+                statusText.textContent = 'Server offline - Please start backend';
+                document.getElementById('warningBox').style.display = 'block';
+                document.getElementById('warningBox').innerHTML = 
+                    '⚠️ <strong>Backend Not Running:</strong> Please run "node server.js" in terminal first.';
             }
-
-            // Update Stats
-            let prg = ((i + 1) / uids.length) * 100;
-            document.getElementById('fill').style.width = prg + '%';
-            document.getElementById('percent').innerText = Math.round(prg) + '%';
-            document.getElementById('activeCount').innerText = active;
-            document.getElementById('blockedCount').innerText = blocked;
         }
-    }
 
-    async function checkStatus(uid) {
-        // এই Method টি Browser-এ Facebook লগইন থাকলে সবচেয়ে ভালো কাজ করে
-        try {
-            const response = await fetch(`https://graph.facebook.com/${uid}/picture?type=normal`);
-            return response.ok && response.url.includes('100x100');
-        } catch (e) {
-            return false;
+        // Check on page load
+        checkServerStatus();
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentPlatform = tab.dataset.platform;
+            });
+        });
+
+        // Mode switching
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+            });
+        });
+
+        // Parse pipe-separated input
+        function parseInput(input) {
+            const parts = input.trim().split('|');
+            if (parts.length !== 4) {
+                throw new Error('❌ Invalid format. Expected: email|password|token|uuid');
+            }
+            return {
+                email: parts[0].trim(),
+                password: parts[1].trim(),
+                token: parts[2].trim(),
+                uuid: parts[3].trim()
+            };
         }
-    }
 
-    function exportActive() {
-        if (activeUIDs.length === 0) return alert("No active UIDs found!");
-        const blob = new Blob([activeUIDs.join('\n')], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'active_uids.txt';
-        a.click();
-    }
-</script>
+        // Debug logger
+        function logDebug(message) {
+            const debugSection = document.getElementById('debugSection');
+            debugSection.style.display = 'block';
+            const timestamp = new Date().toLocaleTimeString();
+            debugSection.innerHTML += `[${timestamp}] ${message}\n`;
+            debugSection.scrollTop = debugSection.scrollHeight;
+        }
 
+        // Main extraction function
+        async function extractCode() {
+            const input = document.getElementById('accountInput').value;
+            const resultBox = document.getElementById('resultBox');
+            const codeDisplay = document.getElementById('codeDisplay');
+            const emailInfo = document.getElementById('emailInfo');
+            const errorBox = document.getElementById('errorBox');
+            const loadingBox = document.getElementById('loadingBox');
+            const extractBtn = document.getElementById('extractBtn');
+            const debugSection = document.getElementById('debugSection');
+
+            // Clear previous results
+            resultBox.classList.remove('show');
+            errorBox.innerHTML = '';
+            loadingBox.innerHTML = '';
+            debugSection.innerHTML = '';
+            debugSection.style.display = 'none';
+
+            try {
+                // Parse input
+                const credentials = parseInput(input);
+                logDebug(`📧 Email: ${credentials.email}`);
+                logDebug(`🔑 Token length: ${credentials.token.length} chars`);
+                logDebug(`🎯 Platform: ${currentPlatform}`);
+                logDebug(`⚙️ Mode: ${currentMode}`);
+
+                // Show loading
+                loadingBox.innerHTML = '<div class="loading">⏳ Fetching emails from Outlook/Hotmail...</div>';
+                extractBtn.disabled = true;
+
+                logDebug('🔄 Calling API...');
+
+                // Call backend API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: credentials.email,
+                        token: credentials.token,
+                        platform: currentPlatform,
+                        mode: currentMode
+                    })
+                });
+
+                const data = await response.json();
+                logDebug(`📨 Response status: ${response.status}`);
+
+                loadingBox.innerHTML = '';
+                extractBtn.disabled = false;
+
+                if (response.ok && data.success) {
+                    logDebug(`✅ Code found: ${data.code}`);
+                    
+                    // Display result
+                    codeDisplay.textContent = data.code;
+                    emailInfo.innerHTML = `
+                        <strong>📧 From:</strong> ${data.email}<br>
+                        <strong>📝 Subject:</strong> ${data.subject}<br>
+                        <strong>🕒 Received:</strong> ${new Date(data.receivedAt).toLocaleString()}
+                    `;
+                    resultBox.classList.add('show');
+
+                    // Auto-copy
+                    await navigator.clipboard.writeText(data.code);
+                    logDebug('📋 Code auto-copied to clipboard');
+
+                    // Add to history
+                    addToHistory(credentials.email, data.code);
+                } else {
+                    logDebug(`❌ Error: ${data.error}`);
+                    throw new Error(data.error || data.details || 'Failed to extract code');
+                }
+
+            } catch (error) {
+                loadingBox.innerHTML = '';
+                extractBtn.disabled = false;
+                logDebug(`💥 Exception: ${error.message}`);
+                
+                let errorMessage = error.message;
+                let hint = '';
+                
+                if (error.message.includes('token')) {
+                    hint = '<br><br>💡 <strong>Tip:</strong> Generate a new Microsoft Graph API token with Mail.Read permission.';
+                } else if (error.message.includes('No verification code')) {
+                    hint = '<br><br>💡 <strong>Tip:</strong> Try switching to Relaxed Mode or check if the verification email was received.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    hint = '<br><br>💡 <strong>Tip:</strong> Make sure the backend server is running (node server.js).';
+                }
+                
+                errorBox.innerHTML = `<div class="error">❌ ${errorMessage}${hint}</div>`;
+            }
+        }
+
+        // Copy button
+        document.getElementById('copyBtn').addEventListener('click', async () => {
+            const code = document.getElementById('codeDisplay').textContent;
+            const btn = document.getElementById('copyBtn');
+            
+            await navigator.clipboard.writeText(code);
+            btn.textContent = '✓ Copied!';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.textContent = '📋 Copy Code';
+                btn.classList.remove('copied');
+            }, 2000);
+        });
+
+        // Add to history
+        function addToHistory(email, code) {
+            history.unshift({ email, code, time: new Date() });
+            if (history.length > 5) history.pop();
+            
+            const historySection = document.getElementById('historySection');
+            const historyList = document.getElementById('historyList');
+            
+            historySection.style.display = 'block';
+            historyList.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <span class="history-email">${item.email}</span>
+                    <span class="history-code">${item.code}</span>
+                </div>
+            `).join('');
+        }
+
+        // Extract button
+        document.getElementById('extractBtn').addEventListener('click', extractCode);
+
+        // Paste to extract
+        document.getElementById('accountInput').addEventListener('paste', (e) => {
+            setTimeout(() => {
+                if (e.target.value.includes('|')) {
+                    extractCode();
+                }
+            }, 100);
+        });
+    </script>
 </body>
 </html>
