@@ -1,110 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Longisir VIP - Full Mail Access</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: #05060f; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        
-        .main-card { background: #ffffff; color: #1e293b; width: 100%; max-width: 600px; padding: 30px; border-radius: 25px; box-shadow: 0 20px 60px rgba(79, 70, 229, 0.4); }
-        h2 { text-align: center; margin-bottom: 25px; color: #4f46e5; font-size: 28px; }
-        
-        .input-box { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid #e2e8f0; background: #f8fafc; font-size: 14px; margin-bottom: 15px; outline: none; transition: 0.3s; }
-        .input-box:focus { border-color: #4f46e5; box-shadow: 0 0 10px rgba(79, 70, 229, 0.1); }
-        
-        .fetch-btn { width: 100%; padding: 18px; border-radius: 15px; border: none; background: #4f46e5; color: #fff; font-weight: 800; cursor: pointer; font-size: 16px; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3); }
-        .fetch-btn:hover { background: #4338ca; transform: translateY(-2px); }
-
-        .result-area { margin-top: 25px; background: #0f111a; border-radius: 20px; padding: 20px; min-height: 150px; border: 1px solid #1e293b; position: relative; }
-        .status-msg { font-size: 13px; color: #94a3b8; text-align: center; margin-top: 50px; }
-        
-        .code-display { text-align: center; display: none; }
-        .code-display h1 { font-size: 60px; color: #22c55e; letter-spacing: 5px; margin: 10px 0; }
-        .code-display span { font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; }
-        
-        .loading { display: none; text-align: center; margin-top: 40px; }
-        .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-
 <div class="main-card">
-    <h2>Full Access Mail Reader</h2>
+    <h2 style="color: #4f46e5; text-align: center;">Full Access Mail Reader</h2>
     
     <label style="font-size: 11px; font-weight: 800; color: #64748b;">PASTE FULL DATA (EMAIL|PASS|TOKEN)</label>
-    <textarea id="full-data" class="input-box" rows="3" placeholder="sylvesterfisher2001nesciunt@outlook.com|Lljyrg491l|..."></textarea>
+    <textarea id="full-data" class="input-box" rows="4" placeholder="Email|Pass|Token..."></textarea>
     
-    <button class="fetch-btn" onclick="startFetching()">GET VERIFICATION CODE</button>
+    <button class="fetch-btn" id="fetch-btn" onclick="fetchLiveCode()">GET VERIFICATION CODE</button>
     
     <div class="result-area" id="res-box">
-        <div id="status-init" class="status-msg">অপেক্ষা করা হচ্ছে... ডাটা দিয়ে বাটনে ক্লিক করুন।</div>
-        
-        <div id="loading-state" class="loading">
+        <div id="loader" style="display:none; text-align:center; padding-top:40px;">
             <div class="spinner"></div>
-            <div style="color:#94a3b8;">অ্যাক্সেস নেওয়া হচ্ছে...</div>
+            <p style="color:#94a3b8; font-size:13px;">সার্ভারের সাথে কানেক্ট করা হচ্ছে...</p>
         </div>
 
-        <div id="code-result" class="code-display">
-            <span>Verification Code Found</span>
-            <h1 id="the-code">000000</h1>
-            <p id="mail-subject" style="color: #94a3b8; font-size: 13px;"></p>
+        <div id="code-box" style="display:none; text-align:center;">
+            <span style="color:#94a3b8; font-size:12px; font-weight:800;">VERIFICATION CODE FOUND</span>
+            <h1 id="live-code" style="font-size: 65px; color: #22c55e; margin: 10px 0;">000000</h1>
+            <p id="live-subject" style="color: #94a3b8; font-size: 13px;"></p>
+        </div>
+        
+        <div id="error-box" style="display:none; color:#ef4444; text-align:center; padding-top:50px;">
+            লগইন ব্যর্থ হয়েছে! পাসওয়ার্ড বা টোকেন চেক করুন।
         </div>
     </div>
 </div>
 
+<style>
+    /* স্পিনার ডিজাইন */
+    .spinner { border: 4px solid rgba(255,255,255,0.1); border-left-color: #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
 <script>
-    async function startFetching() {
-        const rawData = document.getElementById('full-data').value.trim();
-        const resBox = document.getElementById('res-box');
-        const initMsg = document.getElementById('status-init');
-        const loader = document.getElementById('loading-state');
-        const codeDisplay = document.getElementById('code-result');
-        const codeText = document.getElementById('the-code');
+async function fetchLiveCode() {
+    const rawData = document.getElementById('full-data').value.trim();
+    const loader = document.getElementById('loader');
+    const codeBox = document.getElementById('code-box');
+    const errorBox = document.getElementById('error-box');
+    const btn = document.getElementById('fetch-btn');
 
-        if(!rawData) return alert("দয়া করে ডাটা দিন!");
+    if(!rawData) return alert("Data input korun!");
 
-        // UI Reset
-        initMsg.style.display = 'none';
-        codeDisplay.style.display = 'none';
-        loader.style.display = 'block';
+    // UI Reset
+    loader.style.display = 'block';
+    codeBox.style.display = 'none';
+    errorBox.style.display = 'none';
+    btn.disabled = true;
 
-        try {
-            // ডাটা থেকে মেইল এবং পাসওয়ার্ড আলাদা করা
-            const parts = rawData.split('|');
-            const email = parts[0];
-            const password = parts[1];
+    try {
+        // ডাটা স্প্লিট করা
+        const parts = rawData.split('|');
+        const email = parts[0];
+        const pass = parts[1];
 
-            /*
-              এখানে আমরা একটি প্রোফাইল-সার্ভার ব্যবহার করবো যা CORS ব্লক করবে না।
-              আউটলুক সরাসরি ব্রাউজার থেকে রিড করা যায় না।
-              তাই আমরা একটি API ব্যবহার করছি (যা আপনার দেওয়া ইমেজের মতো কাজ করবে)।
-            */
-            
-            // নিচের এই অংশটি আপনার ব্যাকএন্ড এপিআই-এর সাথে কানেক্ট হবে। 
-            // আপাতত আমি একটি ডেমো অটো-ডিটেকশন লজিক দিচ্ছি যা ৩ সেকেন্ড পর কাজ করবে।
-            
-            setTimeout(() => {
-                // আমরা এখানে ধরে নিচ্ছি ডাটা সাকসেসফুলি এসেছে
-                // আপনার দেওয়া image_dd5702.jpg এর মতো "090841" কোডটি ফিল্টার করছি
-                const foundCode = "090841"; 
-                
-                loader.style.display = 'none';
-                codeDisplay.style.display = 'block';
-                codeText.innerText = foundCode;
-                document.getElementById('mail-subject').innerText = "Subject: " + foundCode + " is your Facebook code";
-            }, 4000);
+        /* মনোযোগ দিন: 
+           ব্রাউজার সরাসরি আউটলুক লগইন করতে পারে না। 
+           আপনাকে একটি 'IMAP API' ব্যবহার করতে হবে। 
+           নিচে আমি একটি পাওয়ারফুল মেথড দিচ্ছি যা মেইলের ভেতরের লেটেস্ট কোডটিই খুঁজে আনবে।
+        */
 
-        } catch (error) {
+        // আপনার ব্যাকএন্ড এপিআই এখানে কল হবে। 
+        // আপনি যদি কোনো থার্ড পার্টি এপিআই ব্যবহার করেন, তবে সেটি এখানে বসান।
+        const apiUrl = `https://your-api-domain.com/get-code.php?email=${email}&pass=${pass}`;
+        
+        const response = await fetch(apiUrl);
+        const result = await response.json();
+
+        if(result.success) {
+            document.getElementById('live-code').innerText = result.code;
+            document.getElementById('live-subject').innerText = "Subject: " + result.subject;
             loader.style.display = 'none';
-            initMsg.style.display = 'block';
-            initMsg.innerHTML = '<span style="color:#ef4444;">অ্যাক্সেস এরর! দয়া করে সঠিক ডাটা দিন।</span>';
+            codeBox.style.display = 'block';
+        } else {
+            throw new Error("Failed");
         }
-    }
-</script>
 
-</body>
-</html>
+    } catch (err) {
+        // এরর হলে হ্যান্ডেল করা
+        loader.style.display = 'none';
+        errorBox.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+    }
+}
+</script>
