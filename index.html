@@ -19,22 +19,49 @@
         }
         .container {
             background: white;
-            border-radius: 20px;
+            border-radius: 16px;
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             max-width: 600px;
             width: 100%;
         }
-        h1 {
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
             color: 
 ;
-            margin-bottom: 10px;
             font-size: 28px;
+            margin-bottom: 8px;
         }
-        .subtitle {
+        .header p {
             color: #666;
-            margin-bottom: 30px;
             font-size: 14px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid 
+;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            color: 
+;
+            border-bottom-color: 
+;
         }
         .input-group {
             margin-bottom: 20px;
@@ -44,6 +71,7 @@
             margin-bottom: 8px;
             color: #333;
             font-weight: 600;
+            font-size: 14px;
         }
         textarea {
             width: 100%;
@@ -54,7 +82,7 @@
             font-size: 13px;
             font-family: 'Courier New', monospace;
             resize: vertical;
-            min-height: 120px;
+            min-height: 100px;
             transition: border 0.3s;
         }
         textarea:focus {
@@ -66,6 +94,20 @@
             font-size: 12px;
             color: #999;
             margin-top: 5px;
+        }
+        .parsed-info {
+            background: 
+;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #555;
+            display: none;
+            line-height: 1.8;
+        }
+        .parsed-info.show {
+            display: block;
         }
         button {
             width: 100%;
@@ -79,19 +121,43 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, opacity 0.3s;
         }
-        button:hover {
+        button:hover:not(:disabled) {
             transform: translateY(-2px);
         }
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
+        .loading {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 120, 212, 0.2);
+            border-radius: 50%;
+            border-top-color: 
+;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
         .result {
             margin-top: 20px;
             padding: 20px;
             background: 
+;
+            border: 2px solid 
 ;
             border-radius: 8px;
             display: none;
@@ -99,28 +165,51 @@
         .result.show {
             display: block;
         }
+        .result h3 {
+            color: 
+;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .otp-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
         .otp-code {
             font-size: 32px;
             font-weight: bold;
             color: 
 ;
-            text-align: center;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            margin: 10px 0;
-            letter-spacing: 4px;
+            letter-spacing: 6px;
+        }
+        .copy-btn {
+            padding: 8px 16px;
+            background: 
+;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
             cursor: pointer;
             transition: background 0.3s;
         }
-        .otp-code:hover {
+        .copy-btn:hover {
             background: 
 ;
         }
-        .copy-hint {
-            text-align: center;
-            color: #666;
+        .copy-btn.copied {
+            background: 
+;
+        }
+        .email-info {
             font-size: 13px;
+            color: #666;
+            margin-top: 10px;
         }
         .error {
             color: 
@@ -131,158 +220,155 @@
             border-radius: 8px;
             margin-top: 20px;
             display: none;
+            border-left: 4px solid 
+;
         }
         .error.show {
-            display: block;
-        }
-        .loading {
-            text-align: center;
-            color: 
-;
-            margin-top: 20px;
-            display: none;
-        }
-        .loading.show {
-            display: block;
-        }
-        .parsed-info {
-            background: 
-;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-size: 12px;
-            color: #555;
-            display: none;
-        }
-        .parsed-info.show {
             display: block;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔐 Outlook OTP Extractor</h1>
-        <p class="subtitle">Paste your credentials to extract Facebook/Instagram OTP</p>
-        
+        <div class="header">
+            <h1>🔐 Outlook OTP Extractor</h1>
+            <p>Extract Facebook/Instagram verification codes from Outlook</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="gmail">📧 Gmail</button>
+            <button class="tab" data-tab="outlook">📬 Hotmail/Outlook</button>
+        </div>
+
         <div class="input-group">
             <label>📋 Paste Credentials:</label>
             <textarea id="credentials" placeholder="email|password|token|uuid"></textarea>
             <div class="format-hint">Format: email|password|token|uuid</div>
         </div>
-        
+
         <div class="parsed-info" id="parsedInfo"></div>
-        
-        <button id="extractBtn">Extract OTP</button>
-        
+
+        <button id="extractBtn">Get Verification Code</button>
+
         <div class="loading" id="loading">
-            <p>⏳ Fetching OTP from Outlook...</p>
+            <div class="spinner"></div>
+            <p style="color: 
+; font-weight: 600;">⏳ Fetching verification code...</p>
         </div>
-        
+
         <div class="result" id="result">
-            <h3>✅ OTP Found:</h3>
-            <div class="otp-code" id="otpCode" title="Click to copy"></div>
-            <p class="copy-hint">✓ Code copied to clipboard!</p>
+            <h3>✅ Email Retrieved Successfully</h3>
+            <div class="email-info" id="emailInfo"></div>
+            <div class="otp-display">
+                <div class="otp-code" id="otpCode">------</div>
+                <button class="copy-btn" id="copyBtn">📋 Copy Code</button>
+            </div>
         </div>
-        
+
         <div class="error" id="error"></div>
     </div>
 
     <script>
-        // 🚀 Backend API URL
-        const API_URL = 'https://your-backend.onrender.com/api/get-otp';
-        
-        // Auto-parse on paste
-        document.getElementById('credentials').addEventListener('paste', (e) => {
-            setTimeout(() => {
-                parseCredentials();
-            }, 100);
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://your-backend.onrender.com';
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            });
         });
-        
-        // Parse credentials
+
+        const credInput = document.getElementById('credentials');
+        credInput.addEventListener('input', parseCredentials);
+        credInput.addEventListener('paste', () => setTimeout(parseCredentials, 100));
+
         function parseCredentials() {
-            const input = document.getElementById('credentials').value.trim();
+            const input = credInput.value.trim();
             const parts = input.split('|');
-            
+
             if (parts.length >= 2) {
                 const email = parts[0];
                 const password = parts[1];
                 const token = parts[2] || '';
                 const uuid = parts[3] || '';
-                
+
                 const info = document.getElementById('parsedInfo');
                 info.innerHTML = `
                     <strong>📧 Email:</strong> ${email}<br>
-                    <strong>🔑 Password:</strong> ${'*'.repeat(password.length)}<br>
-                    ${token ? `<strong>🎫 Token:</strong> ${token.substring(0, 20)}...<br>` : ''}
+                    <strong>🔑 Password:</strong> ${'•'.repeat(Math.min(password.length, 20))}<br>
+                    ${token ? `<strong>🎫 Token:</strong> ${token.substring(0, 40)}...<br>` : ''}
                     ${uuid ? `<strong>🆔 UUID:</strong> ${uuid}` : ''}
                 `;
                 info.classList.add('show');
+            } else {
+                document.getElementById('parsedInfo').classList.remove('show');
             }
         }
-        
-        // Extract OTP
+
         document.getElementById('extractBtn').addEventListener('click', async () => {
-            const input = document.getElementById('credentials').value.trim();
+            const input = credInput.value.trim();
             const parts = input.split('|');
-            
+
             if (parts.length < 2) {
                 showError('❌ Invalid format! Use: email|password|token|uuid');
                 return;
             }
-            
+
             const email = parts[0];
             const password = parts[1];
             const token = parts[2] || '';
-            
+
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             const error = document.getElementById('error');
             const btn = document.getElementById('extractBtn');
-            
-            // Reset
+
             result.classList.remove('show');
             error.classList.remove('show');
             loading.classList.add('show');
             btn.disabled = true;
-            
+
             try {
-                const response = await fetch(API_URL, {
+                const response = await fetch(`${API_BASE}/api/get-otp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password, token })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
-                    const otpCode = document.getElementById('otpCode');
-                    otpCode.textContent = data.otp;
+                    document.getElementById('emailInfo').textContent = `For: ${email}`;
+                    document.getElementById('otpCode').textContent = data.otp;
                     result.classList.add('show');
-                    
-                    // Auto-copy to clipboard
-                    navigator.clipboard.writeText(data.otp);
-                    
-                    // Click to copy again
-                    otpCode.addEventListener('click', () => {
-                        navigator.clipboard.writeText(data.otp);
-                        otpCode.style.background = '
-';
-                        setTimeout(() => {
-                            otpCode.style.background = 'white';
-                        }, 300);
-                    });
+                    await navigator.clipboard.writeText(data.otp);
                 } else {
-                    showError('❌ ' + data.error);
+                    showError('❌ ' + (data.error || 'Failed to retrieve OTP'));
                 }
             } catch (err) {
-                showError('❌ Network error: ' + err.message);
+                showError('❌ Connection failed: ' + err.message);
             } finally {
                 loading.classList.remove('show');
                 btn.disabled = false;
             }
         });
-        
+
+        document.getElementById('copyBtn').addEventListener('click', async () => {
+            const otp = document.getElementById('otpCode').textContent;
+            const btn = document.getElementById('copyBtn');
+            
+            await navigator.clipboard.writeText(otp);
+            btn.textContent = '✓ Copied!';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.textContent = '📋 Copy Code';
+                btn.classList.remove('copied');
+            }, 2000);
+        });
+
         function showError(message) {
             const error = document.getElementById('error');
             error.textContent = message;
@@ -291,3 +377,116 @@
     </script>
 </body>
 </html>
+
+2. server.js
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+const GRAPH_API = 'https://graph.microsoft.com/v1.0';
+
+async function getAccessToken(email, password) {
+    try {
+        const response = await axios.post(
+            `https://login.microsoftonline.com/common/oauth2/v2.0/token`,
+            new URLSearchParams({
+                grant_type: 'password',
+                client_id: process.env.CLIENT_ID,
+                client_secret: process.env.CLIENT_SECRET,
+                scope: 'https://graph.microsoft.com/.default',
+                username: email,
+                password: password
+            }),
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+        return response.data.access_token;
+    } catch (error) {
+        throw new Error('Authentication failed');
+    }
+}
+
+function extractOTP(emailBody) {
+    const patterns = [
+        /\b(\d{6})\b/,
+        /code[:\s]+(\d{6})/i,
+        /verification code[:\s]+(\d{6})/i,
+        /(\d{6})\s+is your/i,
+        /your code is[:\s]+(\d{6})/i
+    ];
+
+    for (const pattern of patterns) {
+        const match = emailBody.match(pattern);
+        if (match) return match[1];
+    }
+    return null;
+}
+
+app.post('/api/get-otp', async (req, res) => {
+    try {
+        const { email, password, token } = req.body;
+
+        if (!email || (!password && !token)) {
+            return res.json({ success: false, error: 'Email and password/token required' });
+        }
+
+        const accessToken = token || await getAccessToken(email, password);
+
+        const response = await axios.get(
+            `${GRAPH_API}/me/messages?$top=10&$orderby=receivedDateTime desc&$filter=from/emailAddress/address eq 'security@facebookmail.com' or from/emailAddress/address eq 'security@mail.instagram.com'`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+
+        const messages = response.data.value;
+
+        if (messages.length === 0) {
+            return res.json({ success: false, error: 'No verification emails found' });
+        }
+
+        for (const message of messages) {
+            const body = message.body.content;
+            const otp = extractOTP(body);
+
+            if (otp) {
+                return res.json({
+                    success: true,
+                    otp: otp,
+                    from: message.from.emailAddress.address,
+                    subject: message.subject
+                });
+            }
+        }
+
+        res.json({ success: false, error: 'No OTP code found in recent emails' });
+
+    } catch (error) {
+        console.error('Error:', error.message);
+        res.json({ success: false, error: error.message });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
+
+3. package.json
+{
+  "name": "outlook-otp-extractor",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
