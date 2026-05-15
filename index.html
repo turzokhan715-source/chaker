@@ -1,35 +1,189 @@
-<?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Longisir VIP - Pro Mail Extractor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body { 
+            background: #05060f; 
+            color: #fff; 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 20px;
+        }
 
-$email = $_GET['email'];
-$pass = $_GET['pass'];
+        .mail-card {
+            background: #ffffff;
+            color: #1e293b;
+            width: 100%;
+            max-width: 550px;
+            padding: 40px;
+            border-radius: 35px;
+            box-shadow: 0 30px 70px rgba(79, 70, 229, 0.4);
+            text-align: center;
+        }
 
-// মাইক্রোসফট সার্ভার কানেকশন
-$server = '{outlook.office365.com:993/imap/ssl/novalidate-cert}INBOX';
+        h1 { font-size: 28px; font-weight: 800; color: #0f111a; margin-bottom: 5px; }
+        p.sub-title { font-size: 12px; font-weight: 800; color: #94a3b8; letter-spacing: 2px; margin-bottom: 30px; }
 
-$mbox = imap_open($server, $email, $pass);
+        .input-box {
+            width: 100%;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 20px;
+            transition: 0.3s;
+            resize: none;
+            font-weight: 600;
+        }
 
-if ($mbox) {
-    // লেটেস্ট ১টি মেইল চেক করা
-    $mails = imap_search($mbox, 'ALL');
-    $latest_id = end($mails);
-    
-    $subject = imap_fetch_overview($mbox, $latest_id, 0)[0]->subject;
-    $body = imap_fetchbody($mbox, $latest_id, 1);
-    
-    // ৬ ডিজিটের কোড খোঁজা
-    preg_match('/\d{6}/', $subject . $body, $matches);
-    $code = $matches[0] ?? "Not Found";
+        .input-box:focus { border-color: #4f46e5; background: #fff; }
 
-    echo json_encode([
-        "status" => "success",
-        "code" => $code,
-        "subject" => $subject
-    ]);
-    
-    imap_close($mbox);
-} else {
-    echo json_encode(["status" => "error", "message" => "Login Failed"]);
-}
-?>
+        .fetch-btn {
+            width: 100%;
+            padding: 20px;
+            border-radius: 20px;
+            border: none;
+            background: #4f46e5;
+            color: #fff;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+            transition: 0.3s;
+        }
+
+        .fetch-btn:hover { background: #4338ca; transform: translateY(-2px); }
+        .fetch-btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+        .result-area {
+            margin-top: 30px;
+            background: #0f111a;
+            border-radius: 25px;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #1e293b;
+            position: relative;
+            padding: 20px;
+        }
+
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .code-display { text-align: center; animation: fadeIn 0.5s ease-out; }
+        .code-display span { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+        .code-display h2 { font-size: 65px; color: #22c55e; letter-spacing: 5px; line-height: 1.2; }
+        .code-display p { font-size: 13px; color: #e2e8f0; opacity: 0.7; }
+
+        .error-msg { color: #ef4444; font-weight: 600; font-size: 14px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="mail-card">
+        <h1>Mail API Reader</h1>
+        <p class="sub-title">PREMIUM ACCESS PORTAL</p>
+
+        <textarea id="raw-data" class="input-box" rows="4" placeholder="Paste: Email|Pass|Token..."></textarea>
+
+        <button id="main-btn" class="fetch-btn" onclick="getCode()">GET VERIFICATION CODE</button>
+
+        <div class="result-area" id="display">
+            <div id="init-text" style="color: #64748b; font-size: 14px;">Waiting for data input...</div>
+            
+            <div id="loading" style="display: none;">
+                <div class="loader"></div>
+            </div>
+
+            <div id="success" class="code-display" style="display: none;">
+                <span>Verification Code Found</span>
+                <h2 id="final-code">000000</h2>
+                <p id="final-subject">Subject: No Data</p>
+            </div>
+
+            <div id="error" class="error-msg" style="display: none;">
+                লগইন ব্যর্থ! মেইল বা পাসওয়ার্ড চেক করুন।
+            </div>
+        </div>
+    </div>
+
+<script>
+    async function getCode() {
+        const input = document.getElementById('raw-data').value.trim();
+        const btn = document.getElementById('main-btn');
+        const display = document.getElementById('display');
+        
+        // Elements to toggle
+        const init = document.getElementById('init-text');
+        const loader = document.getElementById('loading');
+        const success = document.getElementById('success');
+        const errorDiv = document.getElementById('error');
+
+        if(!input) return alert("দয়া করে মেইল ডাটা দিন!");
+
+        // UI State: Loading
+        init.style.display = 'none';
+        success.style.display = 'none';
+        errorDiv.style.display = 'none';
+        loader.style.display = 'block';
+        btn.disabled = true;
+        btn.innerText = "ACCESSING INBOX...";
+
+        try {
+            // ডাটা থেকে ইমেইল এবং পাসওয়ার্ড আলাদা করা
+            const parts = input.split('|');
+            const email = parts[0].trim();
+            const pass = parts[1].trim();
+
+            /* মনোযোগ দিন: 
+               আপনার PHP এপিআই-এর লিঙ্কটি নিচের 'apiUrl' এর জায়গায় বসাবেন।
+            */
+            const apiUrl = `https://your-domain.com/read.php?email=${email}&pass=${pass}`;
+            
+            const response = await fetch(apiUrl);
+            const result = await response.json();
+
+            if (result.status === "success") {
+                document.getElementById('final-code').innerText = result.code;
+                document.getElementById('final-subject').innerText = "Subject: " + result.subject;
+                
+                loader.style.display = 'none';
+                success.style.display = 'block';
+            } else {
+                throw new Error("Failed");
+            }
+
+        } catch (err) {
+            loader.style.display = 'none';
+            errorDiv.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "GET VERIFICATION CODE";
+        }
+    }
+</script>
+
+</body>
+</html>
