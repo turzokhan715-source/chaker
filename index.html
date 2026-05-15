@@ -45,24 +45,27 @@
             color: #333;
             font-weight: 600;
         }
-        input, textarea {
+        textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid 
 ;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 120px;
             transition: border 0.3s;
         }
-        input:focus, textarea:focus {
+        textarea:focus {
             outline: none;
             border-color: 
 ;
         }
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-            font-family: monospace;
+        .format-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
         }
         button {
             width: 100%;
@@ -107,6 +110,17 @@
             border-radius: 8px;
             margin: 10px 0;
             letter-spacing: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .otp-code:hover {
+            background: 
+;
+        }
+        .copy-hint {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
         }
         .error {
             color: 
@@ -131,51 +145,95 @@
         .loading.show {
             display: block;
         }
+        .parsed-info {
+            background: 
+;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            color: #555;
+            display: none;
+        }
+        .parsed-info.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔐 Outlook OTP Extractor</h1>
-        <p class="subtitle">Extract Facebook/Instagram verification codes from Outlook</p>
+        <p class="subtitle">Paste your credentials to extract Facebook/Instagram OTP</p>
         
         <div class="input-group">
-            <label>Email:</label>
-            <input type="email" id="email" placeholder="your-email@outlook.com">
+            <label>📋 Paste Credentials:</label>
+            <textarea id="credentials" placeholder="email|password|token|uuid"></textarea>
+            <div class="format-hint">Format: email|password|token|uuid</div>
         </div>
         
-        <div class="input-group">
-            <label>Password:</label>
-            <input type="password" id="password" placeholder="Your password">
-        </div>
-        
-        <div class="input-group">
-            <label>Access Token (optional):</label>
-            <input type="text" id="token" placeholder="Leave empty to use email/password">
-        </div>
+        <div class="parsed-info" id="parsedInfo"></div>
         
         <button id="extractBtn">Extract OTP</button>
         
         <div class="loading" id="loading">
-            <p>⏳ Fetching OTP...</p>
+            <p>⏳ Fetching OTP from Outlook...</p>
         </div>
         
         <div class="result" id="result">
             <h3>✅ OTP Found:</h3>
-            <div class="otp-code" id="otpCode"></div>
-            <p style="text-align: center; color: #666;">Code copied to clipboard!</p>
+            <div class="otp-code" id="otpCode" title="Click to copy"></div>
+            <p class="copy-hint">✓ Code copied to clipboard!</p>
         </div>
         
         <div class="error" id="error"></div>
     </div>
 
     <script>
-        // 🚀 CHANGE THIS TO YOUR DEPLOYED BACKEND URL
+        // 🚀 Backend API URL
         const API_URL = 'https://your-backend.onrender.com/api/get-otp';
         
+        // Auto-parse on paste
+        document.getElementById('credentials').addEventListener('paste', (e) => {
+            setTimeout(() => {
+                parseCredentials();
+            }, 100);
+        });
+        
+        // Parse credentials
+        function parseCredentials() {
+            const input = document.getElementById('credentials').value.trim();
+            const parts = input.split('|');
+            
+            if (parts.length >= 2) {
+                const email = parts[0];
+                const password = parts[1];
+                const token = parts[2] || '';
+                const uuid = parts[3] || '';
+                
+                const info = document.getElementById('parsedInfo');
+                info.innerHTML = `
+                    <strong>📧 Email:</strong> ${email}<br>
+                    <strong>🔑 Password:</strong> ${'*'.repeat(password.length)}<br>
+                    ${token ? `<strong>🎫 Token:</strong> ${token.substring(0, 20)}...<br>` : ''}
+                    ${uuid ? `<strong>🆔 UUID:</strong> ${uuid}` : ''}
+                `;
+                info.classList.add('show');
+            }
+        }
+        
+        // Extract OTP
         document.getElementById('extractBtn').addEventListener('click', async () => {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const token = document.getElementById('token').value;
+            const input = document.getElementById('credentials').value.trim();
+            const parts = input.split('|');
+            
+            if (parts.length < 2) {
+                showError('❌ Invalid format! Use: email|password|token|uuid');
+                return;
+            }
+            
+            const email = parts[0];
+            const password = parts[1];
+            const token = parts[2] || '';
             
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
@@ -198,23 +256,38 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    document.getElementById('otpCode').textContent = data.otp;
+                    const otpCode = document.getElementById('otpCode');
+                    otpCode.textContent = data.otp;
                     result.classList.add('show');
                     
-                    // Copy to clipboard
+                    // Auto-copy to clipboard
                     navigator.clipboard.writeText(data.otp);
+                    
+                    // Click to copy again
+                    otpCode.addEventListener('click', () => {
+                        navigator.clipboard.writeText(data.otp);
+                        otpCode.style.background = '
+';
+                        setTimeout(() => {
+                            otpCode.style.background = 'white';
+                        }, 300);
+                    });
                 } else {
-                    error.textContent = '❌ ' + data.error;
-                    error.classList.add('show');
+                    showError('❌ ' + data.error);
                 }
             } catch (err) {
-                error.textContent = '❌ Network error: ' + err.message;
-                error.classList.add('show');
+                showError('❌ Network error: ' + err.message);
             } finally {
                 loading.classList.remove('show');
                 btn.disabled = false;
             }
         });
+        
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.classList.add('show');
+        }
     </script>
 </body>
 </html>
