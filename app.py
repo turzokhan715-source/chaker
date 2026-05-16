@@ -1,50 +1,81 @@
 from flask import Flask, render_template, request, jsonify
 import requests
-import imaplib
 import re
 
 app = Flask(__name__)
 
-def get_access_token(client_id, refresh_token):
-    """রিফ্রেশ টোকেন দিয়ে মাইক্রোসফট থেকে নতুন এক্সেস টোকেন নেওয়া"""
-    url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
-    payload = {
-        'client_id': client_id,
-        'grant_type': 'refresh_token',
-        'refresh_token': refresh_token,
-        'scope': 'https://outlook.office.com/IMAP.AccessAsUser.All offline_access'
-    }
+def extract_fb_code_via_api(email, refresh_token, client_id):
     try:
-        response = requests.post(url, data=payload, timeout=10).json()
-        return response.get('access_token')
-    except Exception:
-        return None
-
-def fetch_facebook_code(email, access_token):
-    """IMAP এর মাধ্যমে ইনবক্স থেকে ফেসবুকের কোড রিড করা"""
-    try:
-        mail = imaplib.IMAP4_SSL("outlook.office365.com")
-        auth_string = f"user={email}\x01auth=Bearer {access_token}\x01\x01"
-        mail.authenticate('XOAUTH2', lambda x: auth_string.encode('utf-8'))
+        # -------------------------------------------------------------------
+        # ১. সেশন ক্লোনিং ও টোকেন এক্সচেঞ্জ (Session Cloning & OAuth Exchange)
+        # -------------------------------------------------------------------
+        token_url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
         
-        mail.select("inbox")
+        # মোবাইল অ্যাপের মতো হুবহু হেডার স্পুফিং (Fingerprint Spoofing)
+        token_headers = {
+            "User-Agent": "Outlook-Android/4.2415.1 (com.microsoft.office.outlook; build:42415818; Android 12)",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
         
-        # ফেসবুকের পাঠানো ভেরিফিকেশন মেইল ফিল্টার করা
-        status, messages = mail.search(None, '(FROM "facebookmail.com")')
+        token_data = {
+            "client_id": client_id,
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token,
+            "scope": "https://outlook.office.com/Mail.Read https://outlook.office.com/IMAP.AccessAsUser.All offline_access"
+        }
         
-        if status == 'OK' and messages[0]:
-            latest_email_id = messages[0].split()[-1]
-            status, data = mail.fetch(latest_email_id, '(RFC822)')
-            email_content = data[0][1].decode('utf-8', errors='ignore')
+        token_res = requests.post(token_url, headers=token_headers, data=token_data, timeout=10)
+        if token_res.status_code != 200:
+            return "Failed to refresh session token"
             
-            # ৫ বা ৬ ডিজিটের ফেসবুক ওটিপি কোড খুঁজে বের করা
-            code_match = re.search(r'\b\d{5,6}\b', email_content)
-            if code_match:
-                return code_match.group(0)
-                
-        return "No code found"
+        access_token = token_res.json().get("access_token")
+        if not access_token:
+            return "Access token missing in response"
+
+        # -------------------------------------------------------------------
+        # ২. হেডার স্পুফিং ও ইন্টারনাল এপিআই রিকোয়েস্ট (Header Spoofing & API GET)
+        # -------------------------------------------------------------------
+        # আপনার উল্লিখিত ইন্টারনাল OWA/REST API এন্ডপয়েন্ট (সর্বশেষ ৩টি মেইল রিড করার জন্য)
+        owa_api_url = "https://outlook.office.com/api/v2.0/me/mailfolders/inbox/messages?$top=3&$select=Subject,Body,From"
+        
+        api_headers = {
+            "User-Agent": "Outlook-Android/4.2415.1 (com.microsoft.office.outlook; build:42415818; Android 12)",
+            "Authorization": f"Bearer {access_token}",
+            "X-AnchorMailbox": email,  # সরাসরি ইন্টারনাল রাউটিং ইনবক্সে নিয়ে যাওয়ার জন্য
+            "Accept": "application/json"
+        }
+        
+        api_res = requests.get(owa_api_url, headers=api_headers, timeout=10)
+        if api_res.status_code != 200:
+            return f"API Access Denied (Status: {api_res.status_code})"
+            
+        # মাইক্রোসফট সার্ভার থেকে আসা JSON ডাটা পার্স করা
+        json_data = api_res.json()
+        messages = json_data.get("value", [])
+        
+        if not messages:
+            return "Inbox is empty"
+
+        # -------------------------------------------------------------------
+        # ৩. JSON ডাটা স্ক্র্যাপিং ও রেগুলার এক্সপ্রেশন (Regex Filtering)
+        # -------------------------------------------------------------------
+        for msg in messages:
+            sender_email = msg.get("From", {}).get("EmailAddress", {}).get("Address", "").lower()
+            subject = msg.get("Subject", "")
+            body_content = msg.get("Body", {}).get("Content", "")
+            
+            # চেক করা হচ্ছে মেইলটি ফেসবুক থেকে এসেছে কিনা
+            if "facebook" in sender_email or "facebook" in subject.lower():
+                # মেইলের সাবজেক্ট এবং বডি থেকে ৫ বা ৬ ডিজিটের ওটিপি কোড ম্যাচ করা
+                # আপনার লজিক: match(/\d{5,6}/)
+                code_match = re.search(r'\b\d{5,6}\b', subject + " " + body_content)
+                if code_match:
+                    return code_match.group(0) # ১ সেকেন্ডে ফিল্টার করা কোড রিটার্ন করবে
+                    
+        return "No recent Facebook OTP code found"
+
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"System Error: {str(e)}"
 
 @app.route('/')
 def home():
@@ -56,7 +87,7 @@ def get_code():
     raw_input = data.get('raw_input', '')
     
     if not raw_input or '|' not in raw_input:
-        return jsonify({'status': 'error', 'message': 'Invalid format'})
+        return jsonify({'status': 'error', 'message': 'Invalid Input Format'})
     
     parts = raw_input.strip().split('|')
     if len(parts) < 4:
@@ -64,12 +95,12 @@ def get_code():
         
     email, password, refresh_token, client_id = parts[0], parts[1], parts[2], parts[3]
     
-    access_token = get_access_token(client_id, refresh_token)
-    if not access_token:
-        return jsonify({'status': 'error', 'message': 'Failed to get access token.'})
+    # অ্যাডভান্সড এপিআই মেথডে কোড খোঁজা
+    fb_code = extract_fb_code_via_api(email, refresh_token, client_id)
     
-    fb_code = fetch_facebook_code(email, access_token)
-    
+    if "Error" in fb_code or "Failed" in fb_code or "No recent" in fb_code:
+        return jsonify({'status': 'error', 'message': fb_code})
+        
     return jsonify({
         'status': 'success',
         'email': email,
