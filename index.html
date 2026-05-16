@@ -1,44 +1,40 @@
-// আপনার লাইভ রেপ্লিট এপিআই ইউআরএল (সার্চ এন্ডপয়েন্ট)
 const baseApiUrl = "https://email-reader-api--turzokhan715.replit.app/api/email/search";
 
 async function getFacebookCode() {
-    // ইনপুট বক্স থেকে email|pass ডাটা নেওয়া হচ্ছে
     const rawData = document.getElementById('mail-input').value; 
     
-    if (!rawData.includes('|')) {
-        alert("অনুগ্রহ করে 'email|password' এই ফরম্যাটে ইনপুট দিন!");
+    if (!rawData || !rawData.includes('|')) {
+        alert("Please enter input in 'email|password' format!");
         return;
     }
 
-    const [userEmail, userPass] = rawData.split('|');
+    const parts = rawData.split('|');
+    const userEmail = parts[0].trim();
+    const userPass = parts[1].trim();
 
-    // কুয়েরি প্যারামিটার তৈরি করা হচ্ছে (Facebook কোড খোঁজার জন্য)
-    const finalUrl = `${baseApiUrl}?email=${encodeURIComponent(userEmail.trim())}&password=${encodeURIComponent(userPass.trim())}&query=Facebook`;
+    const finalUrl = `${baseApiUrl}?email=${encodeURIComponent(userEmail)}&password=${encodeURIComponent(userPass)}&query=Facebook`;
     
     try {
-        // স্ক্রিনে লোডিং বা ওয়েটিং মেসেজ দেখানো
-        document.getElementById('code-display').innerText = "কোড খোঁজা হচ্ছে, দয়া করে অপেক্ষা করুন...";
+        document.getElementById('code-display').innerText = "Searching code, please wait...";
         
         const response = await fetch(finalUrl);
         const data = await response.json();
         
-        // যদি সার্ভার থেকে সফলভাবে ইমেইল ডাটা আসে
         if (data && data.length > 0) {
-            // প্রথম বা লেটেস্ট মেইলের বডি বা সাবজেক্ট থেকে ৬ ডিজিটের কোড ফিল্টার
             const latestEmail = data[0];
             const emailText = latestEmail.body || latestEmail.subject || "";
-            const codeMatch = emailText.match(/\d{6}/); // ৬ সংখ্যার কোড খুঁজবে
+            const codeMatch = emailText.match(/\d{6}/); 
             
             if (codeMatch) {
                 document.getElementById('code-display').innerText = codeMatch[0];
             } else {
-                document.getElementById('code-display').innerText = "কোনো কোড পাওয়া যায়নি! আবার চেষ্টা করুন।";
+                document.getElementById('code-display').innerText = "Code not found in email!";
             }
         } else {
-            document.getElementById('code-display').innerText = "ফেসবুকের কোনো মেইল পাওয়া যায়নি!";
+            document.getElementById('code-display').innerText = "No Facebook emails found!";
         }
     } catch (error) {
-        console.error("Error fetching data:", error);
-        document.getElementById('code-display').innerText = "সার্ভার কানেকশনে সমস্যা হয়েছে অথবা লগইন ফেইলড!";
+        console.error("Error:", error);
+        document.getElementById('code-display').innerText = "Connection failed or Login incorrect!";
     }
 }
