@@ -71,14 +71,18 @@
     </div>
 
     <script>
+        // ইনপুট বক্স থেকে ইমেইল তাৎক্ষণিকভাবে আলাদা করার লজিক
         document.getElementById('accountInput').addEventListener('input', function(e) {
             const value = e.target.value.trim();
             if(value.includes('|')) {
                 const email = value.split('|')[0];
                 document.getElementById('extractedEmail').innerText = email;
+            } else {
+                document.getElementById('extractedEmail').innerText = "Waiting for input...";
             }
         });
 
+        // বোতামে ক্লিক করলে রেপলিট ব্যাকএন্ড এপিআই কল করার প্রধান ফাংশন
         async function processVerification() {
             const rawInput = document.getElementById('accountInput').value.trim();
             const resultSection = document.getElementById('resultSection');
@@ -92,44 +96,61 @@
                 return;
             }
 
+            // প্রথম লোডিং স্টেট সেট করা
             resultSection.classList.remove('hidden');
             resultSection.style.borderColor = '#cbd5e1'; 
             statusBox.className = "bg-gray-50 border border-gray-100 p-4 rounded-lg mb-4";
-            statusText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Connecting to Mail Server...';
+            statusText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Connecting to Mail Server via API...';
             vCode.innerText = 'XXXXX';
+            
+            // ইমেইল অংশটি আলাদা করে দেখানো
+            if(rawInput.includes('|')) {
+                targetEmail.innerText = rawInput.split('|')[0];
+            }
 
             try {
+                // Replit ব্যাকএন্ডের /get-code এন্ডপয়েন্টে রিকোয়েস্ট পাঠানো
                 const response = await fetch('/get-code', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     body: JSON.stringify({ raw_input: rawInput })
                 });
 
                 const data = await response.json();
 
-                if(data.status === 'success') {
+                if (data.status === 'success') {
                     targetEmail.innerText = data.email;
                     vCode.innerText = data.code;
                     
+                    // সফল হলে ইন্টারফেস সবুজ করা
                     resultSection.style.borderColor = '#22c55e'; 
                     statusBox.className = "bg-green-50 border border-green-100 p-4 rounded-lg mb-4";
                     statusText.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-2"></i> Email Retrieved Successfully';
                 } else {
+                    // ব্যাকএন্ড থেকে এরর মেসেজ আসলে ইন্টারফেস লাল করা
                     resultSection.style.borderColor = '#ef4444'; 
                     statusBox.className = "bg-red-50 border border-red-100 p-4 rounded-lg mb-4";
                     statusText.innerHTML = `<i class="fas fa-times-circle text-red-500 mr-2"></i> ${data.message}`;
+                    vCode.innerText = 'XXXXX';
                 }
             } catch (error) {
+                // নেটওয়ার্ক ফেইলুর বা সার্ভার ক্র্যাশ করলে এরর হ্যান্ডেলিং
                 resultSection.style.borderColor = '#ef4444';
-                statusText.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i> Connection Error!';
+                statusBox.className = "bg-red-50 border border-red-100 p-4 rounded-lg mb-4";
+                statusText.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i> Connection Error! Server might be offline.';
+                vCode.innerText = 'XXXXX';
             }
         }
 
+        // ক্লিপবোর্ডে কোড বা ইমেইল কপি করার হেল্পার ফাংশন
         function copyText(id) {
             const text = document.getElementById(id).innerText;
-            if(text !== 'XXXXX' && text !== 'Waiting for input...') {
+            if(text !== 'XXXXX' && text !== 'Waiting for input...' && text !== '-') {
                 navigator.clipboard.writeText(text);
-                alert('Code copied to clipboard!');
+                alert('Copied to clipboard!');
             }
         }
     </script>
