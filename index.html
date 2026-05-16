@@ -3,440 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB/IG OTP Extractor</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, 
- 0%, 
- 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 550px;
-            width: 100%;
-            padding: 40px;
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 26px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 25px;
-            font-size: 13px;
-        }
-
-        .info-box {
-            background: 
-;
-            border-left: 4px solid 
-;
-            padding: 15px;
-            margin-bottom: 25px;
-            border-radius: 8px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        .info-box strong {
-            color: 
-;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid 
-;
-            border-radius: 10px;
-            background: white;
-            cursor: pointer;
-            text-align: center;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-
-        .tab.active {
-            background: linear-gradient(135deg, 
- 0%, 
- 100%);
-            color: white;
-            border-color: 
-;
-        }
-
-        .tab:hover:not(.active) {
-            border-color: 
-;
-            background: 
-;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid 
-;
-            border-radius: 10px;
-            font-size: 13px;
-            font-family: 'Courier New', monospace;
-            transition: border-color 0.3s;
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: 
-;
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, 
- 0%, 
- 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .result {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 10px;
-            display: none;
-            word-wrap: break-word;
-        }
-
-        .result.success {
-            background: 
-;
-            border: 2px solid 
-;
-            display: block;
-        }
-
-        .result.error {
-            background: 
-;
-            border: 2px solid 
-;
-            display: block;
-        }
-
-        .otp-display {
-            font-size: 36px;
-            font-weight: bold;
-            text-align: center;
-            color: 
-;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 4px;
-        }
-
-        .platform-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        .platform-badge.facebook {
-            background: 
-;
-            color: white;
-        }
-
-        .platform-badge.instagram {
-            background: linear-gradient(45deg, 
- 0%, 
- 25%, 
- 50%, 
- 75%, 
- 100%);
-            color: white;
-        }
-
-        .loading {
-            text-align: center;
-            color: 
-;
-            font-weight: 600;
-            display: none;
-            margin-top: 20px;
-        }
-
-        .loading.active {
-            display: block;
-        }
-
-        .spinner {
-            border: 3px solid 
-;
-            border-top: 3px solid 
-;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .history {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid 
-;
-        }
-
-        .history h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .history-item {
-            background: 
-;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-size: 13px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .history-item .otp {
-            font-weight: bold;
-            color: 
-;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
-
-        .copy-btn {
-            background: 
-;
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .copy-btn:hover {
-            background: 
-;
-        }
-    </style>
+    <title>Email Verification Code Retriever</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-    <div class="container">
-        <h1>🔐 FB/IG OTP Extractor</h1>
-        <p class="subtitle">Microsoft Graph API</p>
+<body class="bg-gray-100 font-sans p-6">
 
-        <div class="info-box">
-            <strong>📋 Format:</strong> email|password|token|uuid<br>
-            <strong>🔑 Token:</strong> Microsoft Graph Access Token
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="flex border-b">
+            <button class="w-1/2 py-3 text-center font-semibold text-gray-500 bg-gray-50 border-r hover:bg-gray-100">
+                <i class="fab fa-google text-red-500 mr-2"></i> Gmail
+            </button>
+            <button class="w-1/2 py-3 text-center font-semibold text-blue-600 bg-white border-b-2 border-blue-600">
+                <i class="fab fa-windows text-blue-500 mr-2"></i> Hotmail/Outlook
+            </button>
         </div>
 
-        <div class="tabs">
-            <div class="tab active" data-platform="facebook">📘 Facebook</div>
-            <div class="tab" data-platform="instagram">📷 Instagram</div>
+        <div class="p-6">
+            <div class="flex items-center space-x-2 text-gray-800 font-bold text-lg mb-4">
+                <span>@</span>
+                <h2>Get Hotmail/Outlook Verification Code</h2>
+            </div>
+
+            <label class="block text-gray-700 text-sm font-semibold mb-2">Account Details</label>
+            <textarea 
+                id="accountInput"
+                class="w-full h-32 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                placeholder="email|password|refresh_token|client_id"
+            ></textarea>
+
+            <div class="text-xs text-gray-500 mt-2 space-y-1">
+                <p><i class="fas fa-info-circle"></i> Format: <span class="bg-gray-200 px-1 rounded">email|password|refresh_token|client_id</span></p>
+                <p><i class="fas fa-envelope"></i> Supports @hotmail.com, @outlook.com, @live.com addresses</p>
+            </div>
+
+            <div class="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
+                <div>
+                    <span class="text-xs text-blue-600 block font-medium">Extracted Email:</span>
+                    <span id="extractedEmail" class="text-blue-900 font-bold">Waiting for input...</span>
+                </div>
+                <button onclick="copyText('extractedEmail')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
+                    <i class="fas fa-copy mr-1"></i> Copy Email
+                </button>
+            </div>
+
+            <button id="getBtn" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-700 transition shadow-md">
+                Get Verification Code
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto mt-6 bg-white rounded-lg shadow-md p-6 border-t-4 border-green-500">
+        <div class="bg-green-50 border border-green-100 p-4 rounded-lg mb-4">
+            <p class="text-green-700 font-bold"><i class="fas fa-check-circle"></i> Email Retrieved Successfully</p>
+            <p class="text-sm text-gray-600 mt-1">For: <span id="targetEmail" class="text-green-700 font-medium">-</span></p>
+            <p class="text-xs text-green-600 mt-1">✓ Verification code detected</p>
         </div>
 
-        <div class="input-group">
-            <label for="credentials">Paste Credentials:</label>
-            <textarea id="credentials" placeholder="email|password|token|uuid"></textarea>
-        </div>
-
-        <button id="extractBtn">🚀 Get Verification Code</button>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Fetching emails...</p>
-        </div>
-
-        <div class="result" id="result"></div>
-
-        <div class="history" id="historySection" style="display: none;">
-            <h3>📜 History</h3>
-            <div id="historyList"></div>
+        <div class="border-2 border-blue-500 rounded-lg p-4 flex justify-between items-center bg-blue-50/30">
+            <div>
+                <span class="text-xs text-gray-500 block">Verification Code:</span>
+                <span id="vCode" class="text-3xl font-bold text-blue-700 tracking-wider">XXXXX</span>
+            </div>
+            <button onclick="copyText('vCode')" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+                <i class="fas fa-copy mr-1"></i> Copy Code
+            </button>
         </div>
     </div>
 
     <script>
-        let selectedPlatform = 'facebook';
-        let history = [];
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                selectedPlatform = tab.dataset.platform;
-            });
-        });
-
-        document.getElementById('extractBtn').addEventListener('click', async () => {
-            const credentials = document.getElementById('credentials').value.trim();
-            const resultDiv = document.getElementById('result');
-            const loadingDiv = document.getElementById('loading');
-            const extractBtn = document.getElementById('extractBtn');
-
-            if (!credentials) {
-                showResult('error', '❌ Please paste credentials!');
-                return;
-            }
-
-            const parts = credentials.split('|');
-            if (parts.length < 3) {
-                showResult('error', '❌ Invalid format! Use: email|password|token|uuid');
-                return;
-            }
-
-            const [email, password, token, uuid] = parts;
-
-            if (!token || token.length < 20) {
-                showResult('error', '❌ Invalid or missing access token!');
-                return;
-            }
-
-            resultDiv.style.display = 'none';
-            loadingDiv.classList.add('active');
-            extractBtn.disabled = true;
-
-            try {
-                console.log('🔍 Fetching emails for:', email);
-
-                const response = await fetch('http://localhost:3000/api/extract-otp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, token, uuid, platform: selectedPlatform })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.otp) {
-                    console.log('🎉 OTP Found:', data.otp);
-                    showResult('success', `
-                        <div style="text-align: center;">
-                            <div style="font-size: 16px; margin-bottom: 10px;">✅ OTP Found!</div>
-                            <div class="otp-display">${data.otp}</div>
-                            <span class="platform-badge ${data.platform}">${data.platform.toUpperCase()}</span>
-                        </div>
-                    `);
-
-                    navigator.clipboard.writeText(data.otp);
-                    addToHistory(email, data.otp, data.platform);
-                } else {
-                    showResult('error', data.error || '❌ No OTP found');
-                }
-            } catch (error) {
-                console.error('❌ Error:', error);
-                showResult('error', `❌ Connection failed<br><small>Make sure backend is running on port 3000</small>`);
-            } finally {
-                loadingDiv.classList.remove('active');
-                extractBtn.disabled = false;
+        // ইনপুট থেকে ইমেইল আলাদা করার সাধারণ জাভাস্ক্রিপ্ট লজিক
+        document.getElementById('accountInput').addEventListener('input', function(e) {
+            const value = e.target.value.trim();
+            if(value.includes('|')) {
+                const email = value.split('|')[0];
+                document.getElementById('extractedEmail').innerText = email;
+                document.getElementById('targetEmail').innerText = email;
             }
         });
 
-        function showResult(type, message) {
-            const resultDiv = document.getElementById('result');
-            resultDiv.className = `result ${type}`;
-            resultDiv.innerHTML = message;
-        }
-
-        function addToHistory(email, otp, platform) {
-            history.unshift({ email, otp, platform, time: new Date().toLocaleTimeString() });
-            if (history.length > 5) history.pop();
-
-            document.getElementById('historySection').style.display = 'block';
-            document.getElementById('historyList').innerHTML = history.map(item => `
-                <div class="history-item">
-                    <div>
-                        <div style="font-weight: 600; margin-bottom: 4px;">${item.email}</div>
-                        <div class="otp">${item.otp} <span class="platform-badge ${item.platform}" style="font-size: 10px; padding: 3px 8px;">${item.platform}</span></div>
-                        <div style="color: #999; font-size: 11px; margin-top: 4px;">${item.time}</div>
-                    </div>
-                    <button class="copy-btn" onclick="copyOTP('${item.otp}')">📋</button>
-                </div>
-            `).join('');
-        }
-
-        function copyOTP(otp) {
-            navigator.clipboard.writeText(otp);
-            alert('✅ Copied: ' + otp);
+        function copyText(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard!');
         }
     </script>
 </body>
