@@ -16,7 +16,7 @@
 <body>
 
 <div class="container">
-    <h2>Facebook OTP Fetcher (Secure POST Mode)</h2>
+    <h2>Facebook OTP Fetcher (URL Encoded GET Mode)</h2>
     
     <textarea id="mail-input" placeholder="sylvesterfisher2001nesciunt@outlook.com|Lljyrg491l|M.C532_..."></textarea>
     <br>
@@ -27,7 +27,7 @@
 </div>
 
 <script>
-// সার্চ করার জন্য এপিআই এন্ডপয়েন্ট ইউআরএল
+// আপনার রেপ্লিটের লাইভ GET এন্ডপয়েন্ট ইউআরএল
 const apiUrl = "https://email-reader-api--turzokhan715.replit.app/api/email/search";
 
 async function getFacebookCode() {
@@ -43,33 +43,38 @@ async function getFacebookCode() {
     const userEmail = parts[0].trim();
     const userPass = parts[1].trim();
 
-    // ইউআরএল-এর বদলে বডির ভেতরে ডাটা পাঠানোর জন্য অবজেক্ট তৈরি
-    const requestData = {
-        email: userEmail,
-        password: userPass,
-        query: "Facebook"
-    };
+    // পাসওয়ার্ডের স্পেশাল ক্যারেক্টারকে সেফলি এনকোড করা হচ্ছে যাতে URL এ হ্যাশ (#) বা ডলার ($) এরর না দেয়
+    const encodedEmail = encodeURIComponent(userEmail);
+    const encodedPass = encodeURIComponent(userPass);
 
+    // ব্যাকএন্ডের রিকোয়ারমেন্ট অনুযায়ী GET কুয়েরি প্যারামিটার তৈরি করা হলো
+    const finalUrl = `${apiUrl}?email=${encodedEmail}&password=${encodedPass}&query=Facebook`;
+    
     try {
-        document.getElementById('code-display').innerText = "Connecting securely & searching code...";
+        document.getElementById('code-display').innerText = "Connecting to Outlook & searching code...";
         document.getElementById('code-display').style.color = "#007bff";
         
-        // এখানে POST রিকোয়েস্ট পাঠানো হচ্ছে যেন স্পেশাল ক্যারেক্টার নষ্ট না হয়
-        const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(requestData)
-        });
-
-        const data = await response.json();
+        // ডিফল্ট GET রিকোয়েস্ট পাঠানো হচ্ছে
+        const response = await fetch(finalUrl);
+        
+        // রেপ্লিট থেকে আসা টেক্সট বা রেসপন্স চেক
+        const textData = await response.text();
+        let data;
+        
+        try {
+            data = JSON.parse(textData);
+        } catch(e) {
+            // যদি সার্ভার JSON না পাঠিয়ে কোনো এরর টেক্সট দেয়
+            document.getElementById('code-display').style.color = "#dc3545";
+            document.getElementById('code-display').innerText = "Server returned non-JSON response. Check Replit Logs!";
+            return;
+        }
         
         if (response.ok && data && data.length > 0) {
             const latestEmail = data[0];
             const emailText = latestEmail.body || latestEmail.subject || "";
             
-            // ইমেইল টেক্সট থেকে ৬ সংখ্যার ওটিপি কোড খোঁজা
+            // ইমেইল থেকে ৬ সংখ্যার ওটিপি কোড খোঁজা
             const codeMatch = emailText.match(/\d{6}/); 
             
             if (codeMatch) {
@@ -81,12 +86,12 @@ async function getFacebookCode() {
             }
         } else {
             document.getElementById('code-display').style.color = "#dc3545";
-            document.getElementById('code-display').innerText = "No Facebook emails found or wrong credentials!";
+            document.getElementById('code-display').innerText = "No Facebook emails found or credentials invalid!";
         }
     } catch (error) {
         console.error("Error:", error);
         document.getElementById('code-display').style.color = "#dc3545";
-        document.getElementById('code-display').innerText = "Server Error (500) or Connection Failed!";
+        document.getElementById('code-display').innerText = "Connection Failed or Server Error!";
     }
 }
 </script>
