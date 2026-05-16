@@ -1,118 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Longisir VIP - Outlook Reader</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background: #05060f; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        
-        .mail-card {
-            background: #ffffff; color: #1e293b; width: 100%; max-width: 500px;
-            padding: 40px; border-radius: 30px; box-shadow: 0 20px 60px rgba(79, 70, 229, 0.4);
-            text-align: center;
-        }
+// আপনার লাইভ রেপ্লিট এপিআই ইউআরএল (সার্চ এন্ডপয়েন্ট)
+const baseApiUrl = "https://email-reader-api--turzokhan715.replit.app/api/email/search";
 
-        .input-box {
-            width: 100%; padding: 18px; border-radius: 15px; border: 2px solid #e2e8f0;
-            background: #f8fafc; font-size: 14px; margin-bottom: 20px; outline: none;
-            resize: none; font-weight: 600;
-        }
-
-        .fetch-btn {
-            width: 100%; padding: 18px; border-radius: 15px; border: none;
-            background: #4f46e5; color: #fff; font-weight: 800; cursor: pointer;
-            transition: 0.3s; font-size: 16px;
-        }
-
-        .fetch-btn:hover { background: #4338ca; transform: translateY(-2px); }
-
-        .result-area {
-            margin-top: 25px; background: #0f111a; border-radius: 20px;
-            min-height: 150px; display: flex; align-items: center; justify-content: center;
-            border: 1px solid #1e293b; padding: 15px;
-        }
-
-        .code-text { font-size: 60px; color: #22c55e; letter-spacing: 5px; font-weight: 800; }
-        .loader { border: 4px solid #1e293b; border-left-color: #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-
-    <div class="mail-card">
-        <h2 style="margin-bottom: 5px;">Mail API Reader</h2>
-        <p style="font-size: 10px; color: #94a3b8; font-weight: 800; margin-bottom: 25px;">PREMIUM ACCESS</p>
-
-        <textarea id="full-data" class="input-box" rows="4" placeholder="Paste: Email|Pass|Token..."></textarea>
-
-        <button class="fetch-btn" id="btn" onclick="fetchCode()">GET VERIFICATION CODE</button>
-
-        <div class="result-area" id="res-box">
-            <div id="init" style="color: #64748b;">অপেক্ষা করা হচ্ছে...</div>
-            <div id="loading" style="display:none;"><div class="loader"></div></div>
-            <div id="success" style="display:none; text-align: center;">
-                <span style="font-size: 11px; color: #94a3b8; font-weight: 800;">FACEBOOK CODE</span>
-                <div id="code" class="code-text">000000</div>
-            </div>
-            <div id="error" style="display:none; color: #ef4444;">লগইন ব্যর্থ বা ডাটা ভুল!</div>
-        </div>
-    </div>
-
-<script>
-    async function fetchCode() {
-        const raw = document.getElementById('full-data').value.trim();
-        const btn = document.getElementById('btn');
-        const box = {
-            init: document.getElementById('init'),
-            loading: document.getElementById('loading'),
-            success: document.getElementById('success'),
-            error: document.getElementById('error')
-        };
-
-        if(!raw) return alert("Data Input Karun!");
-
-        // UI Reset
-        Object.values(box).forEach(el => el.style.display = 'none');
-        box.loading.style.display = 'block';
-        btn.disabled = true;
-
-        try {
-            const [email, pass] = raw.split('|');
-            
-            /* বিঃদ্রঃ: সরাসরি ব্রাউজার থেকে আউটলুক ডাটা ব্লক করে। 
-               আমি এখানে একটি ডাইনামিক ফিল্টার ব্যবহার করছি যা আপনার ইনপুট থেকে 
-               মেইল রিড করার জন্য রিকোয়েস্ট পাঠাবে।
-            */
-            
-            // আমরা একটি ফ্লেক্সিবল এপিআই ব্যবহার করছি যা আপনার ওই হটমেইল সাইটের মতোই কাজ করবে
-            const proxyUrl = "https://api.allorigins.win/get?url=";
-            const targetUrl = encodeURIComponent(`https://www.hotmail143.com/gmail-codes.php?email=${email}&pass=${pass}`);
-
-            const response = await fetch(proxyUrl + targetUrl);
-            const rawJson = await response.json();
-            
-            // ডাটা ক্লিন করা (যেহেতু প্রক্সি থেকে আসছে)
-            const result = JSON.parse(rawJson.contents);
-
-            if(result.successful || result.code) {
-                document.getElementById('code').innerText = result.code;
-                box.loading.style.display = 'none';
-                box.success.style.display = 'block';
-            } else {
-                throw new Error();
-            }
-
-        } catch (err) {
-            box.loading.style.display = 'none';
-            box.error.style.display = 'block';
-        } finally {
-            btn.disabled = false;
-        }
+async function getFacebookCode() {
+    // ইনপুট বক্স থেকে email|pass ডাটা নেওয়া হচ্ছে
+    const rawData = document.getElementById('mail-input').value; 
+    
+    if (!rawData.includes('|')) {
+        alert("অনুগ্রহ করে 'email|password' এই ফরম্যাটে ইনপুট দিন!");
+        return;
     }
-</script>
 
-</body>
-</html>
+    const [userEmail, userPass] = rawData.split('|');
+
+    // কুয়েরি প্যারামিটার তৈরি করা হচ্ছে (Facebook কোড খোঁজার জন্য)
+    const finalUrl = `${baseApiUrl}?email=${encodeURIComponent(userEmail.trim())}&password=${encodeURIComponent(userPass.trim())}&query=Facebook`;
+    
+    try {
+        // স্ক্রিনে লোডিং বা ওয়েটিং মেসেজ দেখানো
+        document.getElementById('code-display').innerText = "কোড খোঁজা হচ্ছে, দয়া করে অপেক্ষা করুন...";
+        
+        const response = await fetch(finalUrl);
+        const data = await response.json();
+        
+        // যদি সার্ভার থেকে সফলভাবে ইমেইল ডাটা আসে
+        if (data && data.length > 0) {
+            // প্রথম বা লেটেস্ট মেইলের বডি বা সাবজেক্ট থেকে ৬ ডিজিটের কোড ফিল্টার
+            const latestEmail = data[0];
+            const emailText = latestEmail.body || latestEmail.subject || "";
+            const codeMatch = emailText.match(/\d{6}/); // ৬ সংখ্যার কোড খুঁজবে
+            
+            if (codeMatch) {
+                document.getElementById('code-display').innerText = codeMatch[0];
+            } else {
+                document.getElementById('code-display').innerText = "কোনো কোড পাওয়া যায়নি! আবার চেষ্টা করুন।";
+            }
+        } else {
+            document.getElementById('code-display').innerText = "ফেসবুকের কোনো মেইল পাওয়া যায়নি!";
+        }
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        document.getElementById('code-display').innerText = "সার্ভার কানেকশনে সমস্যা হয়েছে অথবা লগইন ফেইলড!";
+    }
+}
