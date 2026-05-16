@@ -6,8 +6,8 @@
     <title>Facebook Code Finder Tool</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; text-align: center; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
+        textarea { width: 90%; height: 100px; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px; }
         button { background-color: #007bff; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; }
         button:hover { background-color: #0056b3; }
         #code-display { margin-top: 20px; font-size: 24px; font-weight: bold; color: #28a745; min-height: 40px; }
@@ -16,9 +16,9 @@
 <body>
 
 <div class="container">
-    <h2>Facebook OTP Fetcher</h2>
+    <h2>Facebook OTP Fetcher (Full Token Supported)</h2>
     
-    <input type="text" id="mail-input" placeholder="example@outlook.com|password123">
+    <textarea id="mail-input" placeholder="sylvesterfisher2001nesciunt@outlook.com|Lljyrg491l|M.C532_BAY..."></textarea>
     <br>
     
     <button onclick="getFacebookCode()">Get Code</button>
@@ -30,17 +30,19 @@
 const baseApiUrl = "https://email-reader-api--turzokhan715.replit.app/api/email/search";
 
 async function getFacebookCode() {
-    const rawData = document.getElementById('mail-input').value; 
+    const rawData = document.getElementById('mail-input').value.trim(); 
     
     if (!rawData || !rawData.includes('|')) {
-        alert("Please enter input in 'email|password' format!");
+        alert("Please paste the full token string!");
         return;
     }
 
+    // ফুল টোকেন থেকে ইমেইল এবং পাসওয়ার্ড আলাদা করার নিখুঁত লজিক
     const parts = rawData.split('|');
-    const userEmail = parts[0].trim();
-    const userPass = parts[1].trim();
+    const userEmail = parts[0].trim(); // ১ম অংশ: ইমেইল
+    const userPass = parts[1].trim();  // ২য় অংশ: পাসওয়ার্ড
 
+    // রেপ্লিট এপিআই-এর জন্য সঠিক ইউআরএল তৈরি
     const finalUrl = `${baseApiUrl}?email=${encodeURIComponent(userEmail)}&password=${encodeURIComponent(userPass)}&query=Facebook`;
     
     try {
@@ -52,15 +54,17 @@ async function getFacebookCode() {
         if (data && data.length > 0) {
             const latestEmail = data[0];
             const emailText = latestEmail.body || latestEmail.subject || "";
+            
+            // ইমেইলের ভেতর থেকে ৬ ডিজিটের ফেসবুক ওটিপি কোড খোঁজা
             const codeMatch = emailText.match(/\d{6}/); 
             
             if (codeMatch) {
                 document.getElementById('code-display').innerText = "OTP Code: " + codeMatch[0];
             } else {
-                document.getElementById('code-display').innerText = "Code not found in email!";
+                document.getElementById('code-display').innerText = "Code not found in the latest Facebook email!";
             }
         } else {
-            document.getElementById('code-display').innerText = "No Facebook emails found!";
+            document.getElementById('code-display').innerText = "No Facebook emails found in this account!";
         }
     } catch (error) {
         console.error("Error:", error);
@@ -68,5 +72,6 @@ async function getFacebookCode() {
     }
 }
 </script>
+
 </body>
 </html>
