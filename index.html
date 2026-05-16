@@ -3,95 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facebook Code Finder Tool</title>
+    <title>Facebook Code Finder Tool (Debug Mode)</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; text-align: center; }
         .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-        textarea { width: 90%; height: 120px; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical; }
-        button { background-color: #007bff; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #0056b3; }
-        #code-display { margin-top: 20px; font-size: 24px; font-weight: bold; color: #28a745; min-height: 40px; }
+        textarea { width: 90%; height: 120px; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 13px; }
+        button { background-color: #e67e22; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #d35400; }
+        #code-display { margin-top: 20px; font-size: 18px; font-weight: bold; color: #28a745; min-height: 40px; white-space: pre-wrap; word-break: break-all; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Facebook OTP Fetcher (URL Encoded GET Mode)</h2>
-    
+    <h2>Facebook OTP Fetcher (Debug Mode)</h2>
     <textarea id="mail-input" placeholder="sylvesterfisher2001nesciunt@outlook.com|Lljyrg491l|M.C532_..."></textarea>
     <br>
-    
-    <button onclick="getFacebookCode()">Get Code</button>
-    
-    <div id="code-display">Your Code Will Show Here</div>
+    <button onclick="getFacebookCode()">Get Code & Debug</button>
+    <div id="code-display">Your Code or Server Log Will Show Here</div>
 </div>
 
 <script>
-// আপনার রেপ্লিটের লাইভ GET এন্ডপয়েন্ট ইউআরএল
 const apiUrl = "https://email-reader-api--turzokhan715.replit.app/api/email/search";
 
 async function getFacebookCode() {
     const rawData = document.getElementById('mail-input').value.trim(); 
-    
     if (!rawData || !rawData.includes('|')) {
         alert("Please paste the full token string correctly!");
         return;
     }
 
-    // নিখুঁতভাবে ইমেইল এবং পাসওয়ার্ড আলাদা করা হচ্ছে
     const parts = rawData.split('|');
     const userEmail = parts[0].trim();
     const userPass = parts[1].trim();
 
-    // পাসওয়ার্ডের স্পেশাল ক্যারেক্টারকে সেফলি এনকোড করা হচ্ছে যাতে URL এ হ্যাশ (#) বা ডলার ($) এরর না দেয়
-    const encodedEmail = encodeURIComponent(userEmail);
-    const encodedPass = encodeURIComponent(userPass);
-
-    // ব্যাকএন্ডের রিকোয়ারমেন্ট অনুযায়ী GET কুয়েরি প্যারামিটার তৈরি করা হলো
-    const finalUrl = `${apiUrl}?email=${encodedEmail}&password=${encodedPass}&query=Facebook`;
+    const finalUrl = `${apiUrl}?email=${encodeURIComponent(userEmail)}&password=${encodeURIComponent(userPass)}&query=Facebook`;
     
     try {
-        document.getElementById('code-display').innerText = "Connecting to Outlook & searching code...";
+        document.getElementById('code-display').innerText = "Testing connection...";
         document.getElementById('code-display').style.color = "#007bff";
         
-        // ডিফল্ট GET রিকোয়েস্ট পাঠানো হচ্ছে
         const response = await fetch(finalUrl);
+        const textData = await response.text(); // সার্ভার থেকে আসা র টেক্সট বা এরর ধরবে
         
-        // রেপ্লিট থেকে আসা টেক্সট বা রেসপন্স চেক
-        const textData = await response.text();
-        let data;
-        
-        try {
-            data = JSON.parse(textData);
-        } catch(e) {
-            // যদি সার্ভার JSON না পাঠিয়ে কোনো এরর টেক্সট দেয়
-            document.getElementById('code-display').style.color = "#dc3545";
-            document.getElementById('code-display').innerText = "Server returned non-JSON response. Check Replit Logs!";
-            return;
-        }
-        
-        if (response.ok && data && data.length > 0) {
-            const latestEmail = data[0];
-            const emailText = latestEmail.body || latestEmail.subject || "";
-            
-            // ইমেইল থেকে ৬ সংখ্যার ওটিপি কোড খোঁজা
-            const codeMatch = emailText.match(/\d{6}/); 
-            
-            if (codeMatch) {
+        if (response.ok) {
+            try {
+                const data = JSON.parse(textData);
+                if (data && data.length > 0) {
+                    const latestEmail = data[0];
+                    const emailText = latestEmail.body || latestEmail.subject || "";
+                    const codeMatch = emailText.match(/\d{6}/); 
+                    if (codeMatch) {
+                        document.getElementById('code-display').style.color = "#28a745";
+                        document.getElementById('code-display').innerText = "OTP Code: " + codeMatch[0];
+                    } else {
+                        document.getElementById('code-display').style.color = "#dc3545";
+                        document.getElementById('code-display').innerText = "Code not found. Server Raw Response:\n" + textData;
+                    }
+                } else {
+                    document.getElementById('code-display').style.color = "#dc3545";
+                    document.getElementById('code-display').innerText = "No emails found. Response:\n" + textData;
+                }
+            } catch(e) {
                 document.getElementById('code-display').style.color = "#28a745";
-                document.getElementById('code-display').innerText = "OTP Code: " + codeMatch[0];
-            } else {
-                document.getElementById('code-display').style.color = "#dc3545";
-                document.getElementById('code-display').innerText = "Code not found in the latest email!";
+                document.getElementById('code-display').innerText = "Success Text Response:\n" + textData;
             }
         } else {
+            // ৫০০ বা অন্য কোনো এরর আসলে সার্ভার কী টেক্সট ব্যাক করছে তা এখানে দেখাবে
             document.getElementById('code-display').style.color = "#dc3545";
-            document.getElementById('code-display').innerText = "No Facebook emails found or credentials invalid!";
+            document.getElementById('code-display').innerText = `Server Error (${response.status}). Full Error Log:\n${textData}`;
         }
     } catch (error) {
-        console.error("Error:", error);
         document.getElementById('code-display').style.color = "#dc3545";
-        document.getElementById('code-display').innerText = "Connection Failed or Server Error!";
+        document.getElementById('code-display').innerText = "Network Error: " + error.message;
     }
 }
 </script>
