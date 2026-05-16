@@ -1,132 +1,9 @@
-const express = require('express');
-const axios = require('axios');
-const cors = require('cors');
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// Extract OTP using Microsoft Graph API
-app.post('/api/extract-otp', async (req, res) => {
-    const { email, token, uuid, platform } = req.body;
-
-    if (!email || !token) {
-        return res.status(400).json({ error: 'Missing email or token' });
-    }
-
-    try {
-        console.log('🔍 Fetching emails for:', email);
-        console.log('📱 Platform:', platform);
-
-        // Fetch recent emails from Outlook using Microsoft Graph API
-        const response = await axios.get(
-            'https://graph.microsoft.com/v1.0/me/messages',
-            {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'X-AnchorMailbox': email,
-                    'X-ClientId': uuid || 'outlook-mobile-client',
-                    'User-Agent': 'Microsoft Outlook Mobile/1.0 (Android 12)',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                params: {
-                    '$top': 20,
-                    '$select': 'subject,body,receivedDateTime,from',
-                    '$filter': platform === 'facebook' 
-                        ? "contains(subject, 'Facebook') or contains(from/emailAddress/address, 'facebook')" 
-                        : "contains(subject, 'Instagram') or contains(from/emailAddress/address, 'instagram')",
-                    '$orderby': 'receivedDateTime desc'
-                }
-            }
-        );
-
-        const emails = response.data.value;
-        console.log(`📧 Found ${emails.length} emails`);
-
-        if (emails.length === 0) {
-            return res.status(404).json({ 
-                error: `No ${platform} emails found`,
-                hint: 'Check if the token is valid and has Mail.Read permission'
-            });
-        }
-
-        // Extract OTP from email body
-        for (const email of emails) {
-            const body = email.body.content;
-            const subject = email.subject;
-            
-            console.log('📬 Checking email:', subject);
-
-            // Multiple OTP patterns
-            const patterns = [
-                /\b(\d{6})\b/,                           // 6-digit code
-                /code[:\s]+(\d{6})/i,                    // "code: 123456"
-                /verification[:\s]+(\d{6})/i,            // "verification: 123456"
-                /(\d{6})[:\s]+is your/i,                 // "123456 is your"
-                /your code is[:\s]+(\d{6})/i             // "your code is 123456"
-            ];
-
-            for (const pattern of patterns) {
-                const match = body.match(pattern);
-                if (match) {
-                    const otp = match[1] || match[0].replace(/\D/g, '').slice(0, 6);
-                    
-                    if (otp.length === 6) {
-                        console.log('🎉 OTP Found:', otp);
-                        
-                        return res.json({
-                            success: true,
-                            otp: otp,
-                            platform: platform,
-                            subject: subject,
-                            receivedAt: email.receivedDateTime
-                        });
-                    }
-                }
-            }
-        }
-
-        res.status(404).json({ 
-            error: 'No OTP code found in recent emails',
-            emailsChecked: emails.length
-        });
-
-    } catch (error) {
-        console.error('❌ Error:', error.response?.data || error.message);
-        
-        if (error.response?.status === 401) {
-            return res.status(401).json({ 
-                error: 'Invalid or expired token',
-                hint: 'The access token may be expired. Try refreshing it.'
-            });
-        }
-
-        res.status(500).json({ 
-            error: 'Failed to fetch emails',
-            details: error.response?.data?.error?.message || error.message
-        });
-    }
-});
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Server is running' });
-});
-
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📡 API endpoint: http://localhost:${PORT}/api/extract-otp`);
-});
-
-📄 Complete index.html (Frontend):
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FB/IG OTP Extractor - Microsoft Graph API</title>
+    <title>FB/IG OTP Extractor</title>
     <style>
         * {
             margin: 0;
@@ -150,7 +27,7 @@ app.listen(PORT, () => {
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 500px;
+            max-width: 550px;
             width: 100%;
             padding: 40px;
         }
@@ -159,14 +36,31 @@ app.listen(PORT, () => {
             text-align: center;
             color: #333;
             margin-bottom: 10px;
-            font-size: 28px;
+            font-size: 26px;
         }
 
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+            margin-bottom: 25px;
+            font-size: 13px;
+        }
+
+        .info-box {
+            background: 
+;
+            border-left: 4px solid 
+;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: 
+;
         }
 
         .tabs {
@@ -186,6 +80,7 @@ app.listen(PORT, () => {
             text-align: center;
             font-weight: 600;
             transition: all 0.3s;
+            font-size: 14px;
         }
 
         .tab.active {
@@ -222,11 +117,11 @@ app.listen(PORT, () => {
             border: 2px solid 
 ;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 13px;
             font-family: 'Courier New', monospace;
             transition: border-color 0.3s;
             resize: vertical;
-            min-height: 120px;
+            min-height: 100px;
         }
 
         textarea:focus {
@@ -250,7 +145,7 @@ app.listen(PORT, () => {
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        button:hover {
+        button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
@@ -270,6 +165,7 @@ app.listen(PORT, () => {
             padding: 20px;
             border-radius: 10px;
             display: none;
+            word-wrap: break-word;
         }
 
         .result.success {
@@ -289,19 +185,19 @@ app.listen(PORT, () => {
         }
 
         .otp-display {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: bold;
             text-align: center;
             color: 
 ;
             margin: 15px 0;
             font-family: 'Courier New', monospace;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
         }
 
         .platform-badge {
             display: inline-block;
-            padding: 5px 15px;
+            padding: 6px 16px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
@@ -330,6 +226,7 @@ app.listen(PORT, () => {
 ;
             font-weight: 600;
             display: none;
+            margin-top: 20px;
         }
 
         .loading.active {
@@ -383,6 +280,7 @@ app.listen(PORT, () => {
             color: 
 ;
             font-family: 'Courier New', monospace;
+            font-size: 14px;
         }
 
         .copy-btn {
@@ -390,27 +288,16 @@ app.listen(PORT, () => {
 ;
             color: white;
             border: none;
-            padding: 5px 12px;
-            border-radius: 5px;
+            padding: 6px 14px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
+            font-weight: 600;
         }
 
         .copy-btn:hover {
             background: 
 ;
-        }
-
-        .info-box {
-            background: 
-;
-            border-left: 4px solid 
-;
-            padding: 12px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            font-size: 13px;
-            color: #333;
         }
     </style>
 </head>
@@ -420,8 +307,8 @@ app.listen(PORT, () => {
         <p class="subtitle">Microsoft Graph API</p>
 
         <div class="info-box">
-            📋 <strong>Format:</strong> email|password|token|uuid<br>
-            🔑 <strong>Token:</strong> Microsoft Graph Access Token required
+            <strong>📋 Format:</strong> email|password|token|uuid<br>
+            <strong>🔑 Token:</strong> Microsoft Graph Access Token
         </div>
 
         <div class="tabs">
@@ -430,7 +317,7 @@ app.listen(PORT, () => {
         </div>
 
         <div class="input-group">
-            <label for="credentials">📋 Paste Account Credentials:</label>
+            <label for="credentials">Paste Credentials:</label>
             <textarea id="credentials" placeholder="email|password|token|uuid"></textarea>
         </div>
 
@@ -438,7 +325,7 @@ app.listen(PORT, () => {
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Fetching emails from Outlook...</p>
+            <p>Fetching emails...</p>
         </div>
 
         <div class="result" id="result"></div>
@@ -453,7 +340,6 @@ app.listen(PORT, () => {
         let selectedPlatform = 'facebook';
         let history = [];
 
-        // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -462,7 +348,6 @@ app.listen(PORT, () => {
             });
         });
 
-        // Extract OTP
         document.getElementById('extractBtn').addEventListener('click', async () => {
             const credentials = document.getElementById('credentials').value.trim();
             const resultDiv = document.getElementById('result');
@@ -470,11 +355,10 @@ app.listen(PORT, () => {
             const extractBtn = document.getElementById('extractBtn');
 
             if (!credentials) {
-                showResult('error', '❌ Please paste account credentials!');
+                showResult('error', '❌ Please paste credentials!');
                 return;
             }
 
-            // Parse credentials
             const parts = credentials.split('|');
             if (parts.length < 3) {
                 showResult('error', '❌ Invalid format! Use: email|password|token|uuid');
@@ -488,26 +372,17 @@ app.listen(PORT, () => {
                 return;
             }
 
-            // Show loading
             resultDiv.style.display = 'none';
             loadingDiv.classList.add('active');
             extractBtn.disabled = true;
 
             try {
                 console.log('🔍 Fetching emails for:', email);
-                console.log('📱 Platform:', selectedPlatform);
 
                 const response = await fetch('http://localhost:3000/api/extract-otp', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email,
-                        token,
-                        uuid,
-                        platform: selectedPlatform
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, token, uuid, platform: selectedPlatform })
                 });
 
                 const data = await response.json();
@@ -516,29 +391,20 @@ app.listen(PORT, () => {
                     console.log('🎉 OTP Found:', data.otp);
                     showResult('success', `
                         <div style="text-align: center;">
-                            <div>✅ OTP Found!</div>
+                            <div style="font-size: 16px; margin-bottom: 10px;">✅ OTP Found!</div>
                             <div class="otp-display">${data.otp}</div>
                             <span class="platform-badge ${data.platform}">${data.platform.toUpperCase()}</span>
-                            <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                                📧 ${data.subject}<br>
-                                🕐 ${new Date(data.receivedAt).toLocaleString()}
-                            </div>
                         </div>
                     `);
 
-                    // Auto-copy OTP
                     navigator.clipboard.writeText(data.otp);
-                    console.log('📋 OTP copied to clipboard');
-
-                    // Add to history
                     addToHistory(email, data.otp, data.platform);
                 } else {
-                    console.log('❌ No OTP found');
-                    showResult('error', data.error || '❌ No OTP code found in recent emails');
+                    showResult('error', data.error || '❌ No OTP found');
                 }
             } catch (error) {
-                console.error('❌ Error:', error.message);
-                showResult('error', `❌ Connection failed: ${error.message}<br><small>Make sure the backend server is running on port 3000</small>`);
+                console.error('❌ Error:', error);
+                showResult('error', `❌ Connection failed<br><small>Make sure backend is running on port 3000</small>`);
             } finally {
                 loadingDiv.classList.remove('active');
                 extractBtn.disabled = false;
@@ -549,32 +415,28 @@ app.listen(PORT, () => {
             const resultDiv = document.getElementById('result');
             resultDiv.className = `result ${type}`;
             resultDiv.innerHTML = message;
-            resultDiv.style.display = 'block';
         }
 
         function addToHistory(email, otp, platform) {
             history.unshift({ email, otp, platform, time: new Date().toLocaleTimeString() });
             if (history.length > 5) history.pop();
 
-            const historySection = document.getElementById('historySection');
-            const historyList = document.getElementById('historyList');
-
-            historySection.style.display = 'block';
-            historyList.innerHTML = history.map((item, index) => `
+            document.getElementById('historySection').style.display = 'block';
+            document.getElementById('historyList').innerHTML = history.map(item => `
                 <div class="history-item">
                     <div>
-                        <div style="font-weight: 600;">${item.email}</div>
-                        <div class="otp">${item.otp} <span class="platform-badge ${item.platform}" style="font-size: 10px; padding: 2px 8px;">${item.platform}</span></div>
-                        <div style="color: #999; font-size: 11px;">${item.time}</div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">${item.email}</div>
+                        <div class="otp">${item.otp} <span class="platform-badge ${item.platform}" style="font-size: 10px; padding: 3px 8px;">${item.platform}</span></div>
+                        <div style="color: #999; font-size: 11px; margin-top: 4px;">${item.time}</div>
                     </div>
-                    <button class="copy-btn" onclick="copyOTP('${item.otp}')">📋 Copy</button>
+                    <button class="copy-btn" onclick="copyOTP('${item.otp}')">📋</button>
                 </div>
             `).join('');
         }
 
         function copyOTP(otp) {
             navigator.clipboard.writeText(otp);
-            alert('✅ OTP copied: ' + otp);
+            alert('✅ Copied: ' + otp);
         }
     </script>
 </body>
