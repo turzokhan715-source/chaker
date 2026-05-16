@@ -3,79 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facebook Code Finder Tool (Debug Mode)</title>
+    <title>Facebook Code Finder - Full Access Mode</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; text-align: center; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-        textarea { width: 90%; height: 120px; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 13px; }
-        button { background-color: #e67e22; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #d35400; }
-        #code-display { margin-top: 20px; font-size: 18px; font-weight: bold; color: #28a745; min-height: 40px; white-space: pre-wrap; word-break: break-all; }
+        .container { max-width: 650px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
+        textarea { width: 95%; height: 140px; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 13px; }
+        button { background-color: #2c3e50; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:hover { background-color: #1a252f; }
+        #code-display { margin-top: 20px; font-size: 18px; font-weight: bold; color: #27ae60; min-height: 40px; white-space: pre-wrap; word-break: break-all; text-align: left; background: #fafafa; padding: 15px; border-radius: 4px; border-left: 5px solid #2c3e50; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Facebook OTP Fetcher (Debug Mode)</h2>
-    <textarea id="mail-input" placeholder="sylvesterfisher2001nesciunt@outlook.com|Lljyrg491l|M.C532_..."></textarea>
+    <h2>Facebook OTP Fetcher (Token Auth Mode)</h2>
+    <textarea id="token-input" placeholder="email|password|session_token/cookie|device_id..."></textarea>
     <br>
-    <button onclick="getFacebookCode()">Get Code & Debug</button>
-    <div id="code-display">Your Code or Server Log Will Show Here</div>
+    <button onclick="fetchWithFullAccess()">Get Facebook Code</button>
+    <div id="code-display">Status and logs will appear here...</div>
 </div>
 
 <script>
 const apiUrl = "https://email-reader-api--turzokhan715.replit.app/api/email/search";
 
-async function getFacebookCode() {
-    const rawData = document.getElementById('mail-input').value.trim(); 
+async function fetchWithFullAccess() {
+    const rawData = document.getElementById('token-input').value.trim(); 
     if (!rawData || !rawData.includes('|')) {
-        alert("Please paste the full token string correctly!");
+        alert("Please paste the complete validation token format correctly!");
         return;
     }
 
+    // পাইপ ক্যারেক্টার দিয়ে স্ট্রিংটি স্প্লিট করা হচ্ছে
     const parts = rawData.split('|');
-    const userEmail = parts[0].trim();
-    const userPass = parts[1].trim();
+    
+    if(parts.length < 3) {
+        alert("The input does not seem to contain the full session token parameters.");
+        return;
+    }
 
-    const finalUrl = `${apiUrl}?email=${encodeURIComponent(userEmail)}&password=${encodeURIComponent(userPass)}&query=Facebook`;
+    const email = parts[0].trim();
+    const password = parts[1].trim();
+    const sessionToken = parts[2].trim();
+    // যদি ৪ নম্বর অংশে ডিভাইস আইডি থাকে, তা নেওয়া হবে
+    const deviceId = parts[3] ? parts[3].trim() : "";
+
+    // কুয়েরি প্যারামিটারে সম্পূর্ণ ডেটা এনকোড করে পাঠানো হচ্ছে
+    const finalUrl = `${apiUrl}?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&sessionToken=${encodeURIComponent(sessionToken)}&deviceId=${encodeURIComponent(deviceId)}&query=Facebook`;
     
     try {
-        document.getElementById('code-display').innerText = "Testing connection...";
-        document.getElementById('code-display').style.color = "#007bff";
+        document.getElementById('code-display').innerText = "Initializing connection with session token...";
+        document.getElementById('code-display').style.color = "#2980b9";
         
         const response = await fetch(finalUrl);
-        const textData = await response.text(); // সার্ভার থেকে আসা র টেক্সট বা এরর ধরবে
+        const textData = await response.text();
         
-        if (response.ok) {
-            try {
-                const data = JSON.parse(textData);
-                if (data && data.length > 0) {
-                    const latestEmail = data[0];
-                    const emailText = latestEmail.body || latestEmail.subject || "";
-                    const codeMatch = emailText.match(/\d{6}/); 
-                    if (codeMatch) {
-                        document.getElementById('code-display').style.color = "#28a745";
-                        document.getElementById('code-display').innerText = "OTP Code: " + codeMatch[0];
-                    } else {
-                        document.getElementById('code-display').style.color = "#dc3545";
-                        document.getElementById('code-display').innerText = "Code not found. Server Raw Response:\n" + textData;
-                    }
+        try {
+            const data = JSON.parse(textData);
+            if (response.ok && data && data.length > 0) {
+                const latestEmail = data[0];
+                const emailText = latestEmail.body || latestEmail.subject || "";
+                const codeMatch = emailText.match(/\d{6}/); 
+                
+                if (codeMatch) {
+                    document.getElementById('code-display').style.color = "#27ae60";
+                    document.getElementById('code-display').innerText = "SUCCESS\nOTP Code: " + codeMatch[0];
                 } else {
-                    document.getElementById('code-display').style.color = "#dc3545";
-                    document.getElementById('code-display').innerText = "No emails found. Response:\n" + textData;
+                    document.getElementById('code-display').style.color = "#c0392b";
+                    document.getElementById('code-display').innerText = "Target code pattern not matched in email content. Raw response:\n" + textData;
                 }
-            } catch(e) {
-                document.getElementById('code-display').style.color = "#28a745";
-                document.getElementById('code-display').innerText = "Success Text Response:\n" + textData;
+            } else if (data.error) {
+                document.getElementById('code-display').style.color = "#c0392b";
+                document.getElementById('code-display').innerText = `API Error: ${data.error}\nDetails: ${data.detail || 'None'}`;
+            } else {
+                document.getElementById('code-display').style.color = "#c0392b";
+                document.getElementById('code-display').innerText = "No matching emails found using token access.";
             }
-        } else {
-            // ৫০০ বা অন্য কোনো এরর আসলে সার্ভার কী টেক্সট ব্যাক করছে তা এখানে দেখাবে
-            document.getElementById('code-display').style.color = "#dc3545";
-            document.getElementById('code-display').innerText = `Server Error (${response.status}). Full Error Log:\n${textData}`;
+        } catch(e) {
+            document.getElementById('code-display').style.color = "#c0392b";
+            document.getElementById('code-display').innerText = "Server Response (Non-JSON):\n" + textData;
         }
     } catch (error) {
-        document.getElementById('code-display').style.color = "#dc3545";
-        document.getElementById('code-display').innerText = "Network Error: " + error.message;
+        document.getElementById('code-display').style.color = "#c0392b";
+        document.getElementById('code-display').innerText = "Network Failure: " + error.message;
     }
 }
 </script>
