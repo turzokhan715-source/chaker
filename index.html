@@ -47,17 +47,16 @@
                 </button>
             </div>
 
-            <button id="getBtn" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-700 transition shadow-md">
+            <button id="getBtn" onclick="processVerification()" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-blue-700 transition shadow-md">
                 Get Verification Code
             </button>
         </div>
     </div>
 
-    <div class="max-w-2xl mx-auto mt-6 bg-white rounded-lg shadow-md p-6 border-t-4 border-green-500">
-        <div class="bg-green-50 border border-green-100 p-4 rounded-lg mb-4">
-            <p class="text-green-700 font-bold"><i class="fas fa-check-circle"></i> Email Retrieved Successfully</p>
-            <p class="text-sm text-gray-600 mt-1">For: <span id="targetEmail" class="text-green-700 font-medium">-</span></p>
-            <p class="text-xs text-green-600 mt-1">✓ Verification code detected</p>
+    <div id="resultSection" class="max-w-2xl mx-auto mt-6 bg-white rounded-lg shadow-md p-6 border-t-4 border-gray-300 hidden">
+        <div id="statusBox" class="bg-gray-50 border border-gray-100 p-4 rounded-lg mb-4">
+            <p id="statusText" class="font-bold text-gray-700"><i class="fas fa-spinner fa-spin"></i> Processing...</p>
+            <p class="text-sm text-gray-600 mt-1">For: <span id="targetEmail" class="font-medium">-</span></p>
         </div>
 
         <div class="border-2 border-blue-500 rounded-lg p-4 flex justify-between items-center bg-blue-50/30">
@@ -72,20 +71,66 @@
     </div>
 
     <script>
-        // ইনপুট থেকে ইমেইল আলাদা করার সাধারণ জাভাস্ক্রিপ্ট লজিক
         document.getElementById('accountInput').addEventListener('input', function(e) {
             const value = e.target.value.trim();
             if(value.includes('|')) {
                 const email = value.split('|')[0];
                 document.getElementById('extractedEmail').innerText = email;
-                document.getElementById('targetEmail').innerText = email;
             }
         });
 
+        async function processVerification() {
+            const rawInput = document.getElementById('accountInput').value.trim();
+            const resultSection = document.getElementById('resultSection');
+            const statusBox = document.getElementById('statusBox');
+            const statusText = document.getElementById('statusText');
+            const targetEmail = document.getElementById('targetEmail');
+            const vCode = document.getElementById('vCode');
+
+            if(!rawInput) {
+                alert('Please enter account details first!');
+                return;
+            }
+
+            resultSection.classList.remove('hidden');
+            resultSection.style.borderColor = '#cbd5e1'; 
+            statusBox.className = "bg-gray-50 border border-gray-100 p-4 rounded-lg mb-4";
+            statusText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Connecting to Mail Server...';
+            vCode.innerText = 'XXXXX';
+
+            try {
+                const response = await fetch('/get-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raw_input: rawInput })
+                });
+
+                const data = await response.json();
+
+                if(data.status === 'success') {
+                    targetEmail.innerText = data.email;
+                    vCode.innerText = data.code;
+                    
+                    resultSection.style.borderColor = '#22c55e'; 
+                    statusBox.className = "bg-green-50 border border-green-100 p-4 rounded-lg mb-4";
+                    statusText.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-2"></i> Email Retrieved Successfully';
+                } else {
+                    resultSection.style.borderColor = '#ef4444'; 
+                    statusBox.className = "bg-red-50 border border-red-100 p-4 rounded-lg mb-4";
+                    statusText.innerHTML = `<i class="fas fa-times-circle text-red-500 mr-2"></i> ${data.message}`;
+                }
+            } catch (error) {
+                resultSection.style.borderColor = '#ef4444';
+                statusText.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i> Connection Error!';
+            }
+        }
+
         function copyText(id) {
             const text = document.getElementById(id).innerText;
-            navigator.clipboard.writeText(text);
-            alert('Copied to clipboard!');
+            if(text !== 'XXXXX' && text !== 'Waiting for input...') {
+                navigator.clipboard.writeText(text);
+                alert('Code copied to clipboard!');
+            }
         }
     </script>
 </body>
